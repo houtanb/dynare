@@ -156,6 +156,20 @@ case ${host_os} in
     ;;
 esac
 
+# Hack to see if compiling on OS X 10.7 so we can patch the buggy FlexLexer.h
+# that came with it (ref #575). Delete when we stop supporting OS X 10.7
+lion="false"
+case ${host_os} in
+   *darwin*)
+     major=`sw_vers -productVersion | awk -F. '{ printf("%d", $1); }';`
+     minor=`sw_vers -productVersion | awk -F. '{ printf("%d", $2); }';`
+     if (( major == 10 )) && (( minor == 7)); then
+       lion="true"
+     fi
+   ;;
+esac
+AM_CONDITIONAL([OSXLION], [test x$lion = xtrue])
+
 if test "x$F77" != "x"; then
    AX_BLAS
    AX_LAPACK
