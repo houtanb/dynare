@@ -1,18 +1,18 @@
-function h = getLine(o, xrange)
-%function h = getLine(o, xrange)
-% Create the report_series
+function o = writeLine(o, fid, xrange)
+%function o = writeLine(o, fid, xrange)
+% Print a TikZ line
 %
 % INPUTS
 %   o       [report_series]    series object
 %   xrange  [dates]            range of x values for line
 %
 % OUTPUTS
-%   h       [handle]    handle to line
+%   NONE
 %
 % SPECIAL REQUIREMENTS
 %   none
 
-% Copyright (C) 2013 Dynare Team
+% Copyright (C) 2014 Dynare Team
 %
 % This file is part of Dynare.
 %
@@ -30,31 +30,28 @@ function h = getLine(o, xrange)
 % along with Dynare.  If not, see <http://www.gnu.org/licenses/>.
 
 %% Validate options provided by user
-assert(~isempty(o.data) && isa(o.data, 'dseries'), ['@report_series.getLine: must ' ...
+assert(~isempty(o.data) && isa(o.data, 'dseries'), ['@report_series.writeLine: must ' ...
                     'provide data as a dseries']);
 
 % Line
-assert(ischar(o.graphLineColor), '@report_series.getLine: graphLineColor must be a string');
-valid_line_style = {'none', '-', '--', ':', '-.'};
-assert(any(strcmp(o.graphLineStyle, valid_line_style)), ...
-       ['@report_series.getLine: graphLineStyle must be one of ' strjoin(valid_line_style, ' ')]);
-assert(isfloat(o.graphLineWidth), ['@report_series.getLine: graphLineWidth must be a ' ...
-                    'positive number']);
+assert(ischar(o.graphLineColor), '@report_series.writeLine: graphLineColor must be a string');
+assert(ischar(o.graphLineStyle), '@report_series.writeLine: graphLineStyle must be a string');
+assert(ischar(o.graphLineWidth), '@report_series.writeLine: graphLineWidth must be a string');
 
 % GraphMarker
 valid_graphMarker = {'+', 'o', '*', '.', 'x', 's', 'square', 'd', 'diamond', ...
                 '^', 'v', '>', '<', 'p', 'pentagram', 'h', 'hexagram', ...
                 'none'};
 assert(isempty(o.graphMarker) || any(strcmp(o.graphMarker, valid_graphMarker)), ...
-       ['@report_series.getLine: graphMarker must be one of ' strjoin(valid_graphMarker)]);
+       ['@report_series.writeLine: graphMarker must be one of ' strjoin(valid_graphMarker)]);
 
-assert(ischar(o.graphMarkerEdgeColor), '@report_series.getLine: graphMarkerEdgeColor must be a string');
-assert(ischar(o.graphMarkerFaceColor), '@report_series.getLine: graphMarkerFaceColor must be a string');
-assert(isfloat(o.graphMarkerSize), ['@report_series.getLine: graphMarkerSize must be a ' ...
+assert(ischar(o.graphMarkerEdgeColor), '@report_series.writeLine: graphMarkerEdgeColor must be a string');
+assert(ischar(o.graphMarkerFaceColor), '@report_series.writeLine: graphMarkerFaceColor must be a string');
+assert(isfloat(o.graphMarkerSize), ['@report_series.writeLine: graphMarkerSize must be a ' ...
                     'positive number']);
 
 % Marker & Line
-assert(~(strcmp(o.graphLineStyle, 'none') && isempty(o.graphMarker)), ['@report_series.getLine: ' ...
+assert(~(strcmp(o.graphLineStyle, 'none') && isempty(o.graphMarker)), ['@report_series.writeLine: ' ...
                     'you must provide at least one of graphLineStyle and graphMarker']);
 
 % Validate xrange
@@ -80,19 +77,23 @@ if any(stz)
     thedata(stz) = 0;
 end
 
-opt = {'XData', 1:length(thedata)};
-opt = {opt{:}, 'YData', thedata};
+fprintf(fid, '\\draw[%s, %s, %s] ', o.graphLineStyle, o.graphLineWidth, o.graphLineColor);
+ndat = ds.dates.ndat;
+for i=1:ndat
+    fprintf(fid, '(%d, %f)', i, thedata(i));
+    if i ~= ndat
+        fprintf(fid, '--');
+    end
+end
+fprintf(fid, ';\n');
 
-opt = {opt{:}, 'Color', o.graphLineColor};
-opt = {opt{:}, 'LineStyle', o.graphLineStyle};
-opt = {opt{:}, 'LineWidth', o.graphLineWidth};
+
+%opt = {'XData', 1:length(thedata)};
 
 if ~isempty(o.graphMarker)
-    opt = {opt{:}, 'Marker', o.graphMarker};
-    opt = {opt{:}, 'MarkerSize', o.graphMarkerSize};
-    opt = {opt{:}, 'MarkerEdgeColor', o.graphMarkerEdgeColor};
-    opt = {opt{:}, 'MarkerFaceColor', o.graphMarkerFaceColor};
+    %opt = {opt{:}, 'Marker', o.graphMarker};
+    %opt = {opt{:}, 'MarkerSize', o.graphMarkerSize};
+    %opt = {opt{:}, 'MarkerEdgeColor', o.graphMarkerEdgeColor};
+    %opt = {opt{:}, 'MarkerFaceColor', o.graphMarkerFaceColor};
 end
-
-h = line(opt{:});
 end

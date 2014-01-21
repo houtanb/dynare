@@ -35,9 +35,9 @@ o = struct;
 
 o.data = '';
 
-o.graphLineColor = 'k';
-o.graphLineStyle = '-';
-o.graphLineWidth = 0.5;
+o.graphLineColor = 'black';
+o.graphLineStyle = 'solid';
+o.graphLineWidth = 'thin';
 
 o.graphMarker = '';
 o.graphMarkerEdgeColor = 'auto';
