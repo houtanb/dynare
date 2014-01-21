@@ -1,5 +1,5 @@
-function o = createGraph(o)
-%function o = createGraph(o)
+function o = printFigure(o, fid)
+%function o = printFigure(o, fid)
 % Create the graph
 %
 % INPUTS
@@ -28,17 +28,12 @@ function o = createGraph(o)
 % You should have received a copy of the GNU General Public License
 % along with Dynare.  If not, see <http://www.gnu.org/licenses/>.
 
-return
-if ~isempty(o.figname)
-    warning('@graph.createGraph: will overwrite %s with new graph\n', ...
-            o.figname);
-end
-
 if ~o.seriesElements.numSeriesElements()
     warning('@graph.crepateGraph: no series to plot, returning');
     return;
 end
 
+fprintf(fid, '\\begin{tikzpicture}\n');
 %if isempty(o.graphSize)
 %    h = figure('visible','off');
 %else
@@ -46,10 +41,6 @@ end
 %end
 %hold on;
 %box on;
-if o.showGrid
-    grid on;
-    set(gca, 'GridLineStyle', '--');
-end
 
 if isempty(o.xrange)
     dd = o.seriesElements.getMaxRange();
@@ -57,11 +48,16 @@ else
     dd = o.xrange;
 end
 
-ne = o.seriesElements.numSeriesElements();
-line_handles = zeros(ne, 1);
-for i=1:ne
-    line_handles(i) = o.seriesElements(i).getLine(dd);
+if o.showGrid
+    %fprintf(fid, '\\draw[help lines] (0,0) (%d,%d);', dd.ndat, maxRange);
 end
+
+ne = o.seriesElements.numSeriesElements();
+for i=1:ne
+    o.seriesElements(i).writeLine(fid, dd);
+end
+fprintf(fid, '\\end{tikzpicture}\n');
+return
 
 x = 1:1:dd.ndat;
 xlim([1 dd.ndat]);
@@ -143,7 +139,7 @@ if isempty(o.figname)
     end
     o.figname = [o.figDirName '/' tn '.tex'];
 end
-
+disp('  converting to tex....');
 if isoctave && isempty(regexpi(computer, '.*apple.*', 'once'))
     print(o.figname, '-dtikz');
 else
@@ -153,10 +149,5 @@ else
                 'checkForUpdates', false);
 end
 
-grid off;
-box off;
-hold off;
-close(h);
-clear h;
-fprintf(1, '.');
+fprintf(fid, '\\end{tikzpicture}\n');
 end
