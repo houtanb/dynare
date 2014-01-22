@@ -55,7 +55,7 @@ assert(~(strcmp(o.graphLineStyle, 'none') && isempty(o.graphMarker)), ['@report_
                     'you must provide at least one of graphLineStyle and graphMarker']);
 
 % Validate xrange
-assert(isempty(xrange) || isa(xrange, 'dates'));
+
 
 % Zero tolerance
 assert(isfloat(o.zerotol), '@report_series.write: zerotol must be a float');
