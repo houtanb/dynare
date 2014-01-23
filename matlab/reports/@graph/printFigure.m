@@ -55,17 +55,37 @@ end
 ne = o.seriesElements.numSeriesElements();
 for i=1:ne
     o.seriesElements(i).writeLine(fid, dd);
+    if isempty(o.yrange)
+        if i == 1
+            ymax = o.seriesElements(i).ymax(dd);
+            ymin = o.seriesElements(i).ymin(dd);
+        else
+            if o.seriesElements(i).ymax(dd) > ymax
+                ymax = o.seriesElements(i).ymax(dd);
+            end
+            if o.seriesElements(i).ymin(dd) < ymin
+                ymin = o.seriesElements(i).ymin(dd);
+            end
+        end
+    end
 end
+
+if ~isempty(o.yrange)
+    ymin = o.yrange(1);
+    ymax = o.yrange(2);
+end
+
+ymax
+ymin
+dd.ndat
+fprintf(fid, '\\draw [thick, <->] (0,%f) -- (0,%f) -- (%d,0);', ymax, ymin, dd.ndat);
+
 fprintf(fid, '\\end{tikzpicture}\n');
 return
 
 x = 1:1:dd.ndat;
 xlim([1 dd.ndat]);
 xlabels = strings(dd);
-
-if ~isempty(o.yrange)
-    ylim(o.yrange);
-end
 
 if o.showZeroline
     a = ylim;

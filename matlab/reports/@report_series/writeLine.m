@@ -87,7 +87,6 @@ for i=1:ndat
 end
 fprintf(fid, ';\n');
 
-
 %opt = {'XData', 1:length(thedata)};
 
 if ~isempty(o.graphMarker)

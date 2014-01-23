@@ -41,7 +41,7 @@ if strcmpi(o.orientation, 'landscape')
     fprintf(fid, ',landscape');
 end
 fprintf(fid, ']{geometry}\n');
-fprintf(fid, '\\usepackage{pdflscape, pgf, booktabs}\n');
+fprintf(fid, '\\usepackage{pdflscape, pgf, tikz, booktabs}\n');
 fprintf(fid, ['\\makeatletter\n' ...
               '\\def\\blfootnote{\\gdef\\@thefnmark{}\\@footnotetext}\n' ...
               '\\makeatother\n']);
@@ -53,7 +53,6 @@ if isoctave && isempty(regexpi(computer, '.*apple.*', 'once'))
 else
     fprintf(fid, '\\usepackage{pgfplots}\n');
 end
-fprintf(fid, '\\usepackage{tikz}\n');
 
 fprintf(fid, '\\usepackage{color, colortbl}\n');
 fprintf(fid, '\\definecolor{LightCyan}{rgb}{0.88,1,1}\n');
