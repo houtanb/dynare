@@ -1,5 +1,5 @@
-function o = printFigure(o, fid)
-%function o = printFigure(o, fid)
+function o = printFigure(o)
+%function o = printFigure(o)
 % Create the graph
 %
 % INPUTS
@@ -31,6 +31,19 @@ function o = printFigure(o, fid)
 if ~o.seriesElements.numSeriesElements()
     warning('@graph.crepateGraph: no series to plot, returning');
     return;
+end
+
+if isempty(o.figname)
+    [junk, tn] = fileparts(tempname);
+    if strcmp(computer, 'PCWIN') || strcmp(computer, 'PCWIN64')
+        tn = strrep(tn, '_', '-');
+    end
+    o.figname = [o.figDirName '/' tn '.tex'];
+end
+
+[fid, msg] = fopen(o.figname, 'w');
+if fid == -1
+    error(['@graph.printFigure: ' msg]);
 end
 
 fprintf(fid, '\\begin{tikzpicture}\n');
@@ -78,9 +91,13 @@ end
 ymax
 ymin
 dd.ndat
-fprintf(fid, '\\draw [thick, <->] (0,%f) -- (0,%f) -- (%d,0);', ymax, ymin, dd.ndat);
+%fprintf(fid, '\\draw [thick, <->] (0,%f) -- (0,%f) -- (%d,0);', ymax, ymin, dd.ndat);
 
-fprintf(fid, '\\end{tikzpicture}\n');
+fprintf(fid, '\n\\end{tikzpicture}\n');
+status = fclose(fid);
+if status == -1
+    error('@graph.printFigure: closing %s\n', o.filename);
+end
 return
 
 x = 1:1:dd.ndat;
@@ -152,13 +169,7 @@ if ~isempty(o.ylabel)
 end
 drawnow;
 
-if isempty(o.figname)
-    [junk, tn] = fileparts(tempname);
-    if strcmp(computer, 'PCWIN') || strcmp(computer, 'PCWIN64')
-        tn = strrep(tn, '_', '-');
-    end
-    o.figname = [o.figDirName '/' tn '.tex'];
-end
+
 disp('  converting to tex....');
 if isoctave && isempty(regexpi(computer, '.*apple.*', 'once'))
     print(o.figname, '-dtikz');
@@ -169,5 +180,4 @@ else
                 'checkForUpdates', false);
 end
 
-fprintf(fid, '\\end{tikzpicture}\n');
 end
