@@ -80,15 +80,14 @@ if o.showZeroline
     fprintf(fid, '\\draw (1,0) -- (%d,0);\n', dd.ndat);
 end
 
-fprintf(fid, '\\draw (1, %d) -- (1, %d);\n', ymin, ymax);
-fprintf(fid, '\\draw (1, %d) -- (%d, %d);\n', ymax, dd.ndat, ymax);
-fprintf(fid, '\\draw (1, %d) -- (%d, %d);\n', ymin, dd.ndat, ymin);
-fprintf(fid, '\\draw (%d, %d) -- (%d, %d);\n', dd.ndat, ymin, dd.ndat, ymax);
+fprintf(fid, '\\draw (1,%d) -- (1,%d);\n', ymin, ymax);
+fprintf(fid, '\\draw (1,%d) -- (%d,%d);\n', ymax, dd.ndat, ymax);
+fprintf(fid, '\\draw (1,%d) -- (%d,%d);\n', ymin, dd.ndat, ymin);
+fprintf(fid, '\\draw (%d,%d) -- (%d,%d);\n', dd.ndat, ymin, dd.ndat, ymax);
 
 if ~isempty(o.yrange)
-    %clip
-    ymin = o.yrange(1);
-    ymax = o.yrange(2);
+    fprintf(fid, '\\clip (1,%f) rectangle (%d, %f);\n', o.yrange(1), ...
+            dd.ndat, o.yrange(2));
 end
 
 fprintf(fid, '\n\\end{tikzpicture}\n');
