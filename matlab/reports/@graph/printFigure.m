@@ -61,37 +61,35 @@ else
     dd = o.xrange;
 end
 
-if o.showGrid
-    %fprintf(fid, '\\draw[help lines] (0,0) (%d,%d);', dd.ndat, maxRange);
-end
-
 ne = o.seriesElements.numSeriesElements();
+ymax = zeros(ne, 1);
+ymin = zeros(ne, 1);
 for i=1:ne
     o.seriesElements(i).writeLine(fid, dd);
-    if isempty(o.yrange)
-        if i == 1
-            ymax = o.seriesElements(i).ymax(dd);
-            ymin = o.seriesElements(i).ymin(dd);
-        else
-            if o.seriesElements(i).ymax(dd) > ymax
-                ymax = o.seriesElements(i).ymax(dd);
-            end
-            if o.seriesElements(i).ymin(dd) < ymin
-                ymin = o.seriesElements(i).ymin(dd);
-            end
-        end
-    end
+    ymax(i) = o.seriesElements(i).ymax(dd);
+    ymin(i) = o.seriesElements(i).ymin(dd);
+end
+ymax = ceil(max(ymax));
+ymin = floor(min(ymin));
+
+if o.showGrid
+    fprintf(fid, '\\draw[style=help lines] (1,%d) grid (%d,%d);\n', ymin, dd.ndat, ymax);
 end
 
+if o.showZeroline
+    fprintf(fid, '\\draw (1,0) -- (%d,0);\n', dd.ndat);
+end
+
+fprintf(fid, '\\draw (1, %d) -- (1, %d);\n', ymin, ymax);
+fprintf(fid, '\\draw (1, %d) -- (%d, %d);\n', ymax, dd.ndat, ymax);
+fprintf(fid, '\\draw (1, %d) -- (%d, %d);\n', ymin, dd.ndat, ymin);
+fprintf(fid, '\\draw (%d, %d) -- (%d, %d);\n', dd.ndat, ymin, dd.ndat, ymax);
+
 if ~isempty(o.yrange)
+    %clip
     ymin = o.yrange(1);
     ymax = o.yrange(2);
 end
-
-ymax
-ymin
-dd.ndat
-%fprintf(fid, '\\draw [thick, <->] (0,%f) -- (0,%f) -- (%d,0);', ymax, ymin, dd.ndat);
 
 fprintf(fid, '\n\\end{tikzpicture}\n');
 status = fclose(fid);
