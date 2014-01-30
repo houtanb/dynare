@@ -1,6 +1,4 @@
 function runDynareReport(dc_a, dc_q, db_a, db_q)
-%function runDynareReport(dc_a, dc_q, db_a, db_q)
-
 % Copyright (C) 2013-2014 Dynare Team
 %
 % This file is part of Dynare.
@@ -32,23 +30,14 @@ longNames  = {'Coca Cola', 'Kinder Bueno', 'Pizza', ...
 %% Begin Report
 rep = report();
 
-rep = rep.addPage('title', 'Jan1 vs Jan2', ...
-                  'titleFormat', '\large\bfseries');
-rep = rep.addSection('height', '60mm');
 
-rep = rep.addGraph('title', 'World Real Oil Price Index', ...
-                   'xrange', prange, ...
-                   'shade', srange, ...
-                   'showLegend', true);
-db_q = db_q.tex_rename('LRPOIL_WORLD', 'Oil Price');
-rep = rep.addSeries('data', db_q{'LRPOIL_WORLD'}, ...
-                    'graphLineColor', 'blue', ...
-                    'graphLineWidth', 'semithick');
-db_q = db_q.tex_rename('LRPOIL_BAR_WORLD', 'Equilibrium Oil Price');
-rep = rep.addSeries('data', db_q{'LRPOIL_BAR_WORLD'}, ...
-                    'graphLineColor', 'green', ...
-                    'graphLineStyle', 'solid', ...
-                    'graphLineWidth', 'semithick');
+%% Country Pages
+i=1;
+rep = rep.addPage('title', {'Jan1 vs Jan2', longNames{i}}, ...
+                  'titleFormat', {'\large\bfseries', '\large'});
+rep = rep.addSection('cols', 2);
+rep = CountryGraphPage(rep, shortNames{i}, db_q, dc_q, prange, srange);
+
 
 %% Write & Compile Report
 rep.write();
