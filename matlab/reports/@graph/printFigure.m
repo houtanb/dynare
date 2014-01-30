@@ -90,44 +90,28 @@ if ~isempty(o.yrange)
             dd.ndat, o.yrange(2));
 end
 
-fprintf(fid, '\n\\end{tikzpicture}\n');
-status = fclose(fid);
-if status == -1
-    error('@graph.printFigure: closing %s\n', o.filename);
-end
-return
-
 x = 1:1:dd.ndat;
-xlim([1 dd.ndat]);
 xlabels = strings(dd);
-
-if o.showZeroline
-    a = ylim;
-    if 0 > a(1) && 0 < a(2)
-        lh = line(xlim, [0 0], 'color', 'k', 'LineWidth', 0.25);
-        children =get(gca(), 'children');
-        children = [children(2:end); lh];
-        set(gca(), 'children', children);
-    end
-end
-
 if ~isempty(o.shade)
     x1 = find(strcmpi(date2string(o.shade(1)), xlabels));
     x2 = find(strcmpi(date2string(o.shade(end)), xlabels));
     assert(~isempty(x1) && ~isempty(x2), ['@graph.createGraph: either ' ...
                         date2string(o.shade(1)) ' or ' date2string(o.shade(end)) ' is not in the date ' ...
                         'range of data selected.']);
-    yrange = get(gca, 'YLim');
-
-    % From ShadePlotForEmpahsis (Matlab Exchange)
-    % use patch bc area doesn't work with matlab2tikz
-    sh = patch([repmat(x1, 1, 2) repmat(x2, 1, 2)], ...
-               [yrange fliplr(yrange)], o.shadeColor, ...
-               'facealpha', o.shadeOpacity);
-    children = get(gca, 'children');
-    children = [children(2:end); sh];
-    set(gca, 'children', children);
+    fprintf(fid, '\\begin{pgfonlayer}{background}\n');
+    fprintf(fid, ['  \\fill[green!20!white] '...
+                  '(%d,%d) -- (%d, %d) -- (%d, %d) -- (%d, %d) -- cycle;\n'...
+                  ''], x1, ymin, x1, ymax, x2, ymax, x2, ymin);
+    fprintf(fid, '\\end{pgfonlayer}\n');
 end
+
+
+fprintf(fid, '\n\\end{tikzpicture}\n');
+status = fclose(fid);
+if status == -1
+    error('@graph.printFigure: closing %s\n', o.filename);
+end
+return
 
 if isempty(o.xTickLabels)
     xticks = get(gca, 'XTick');

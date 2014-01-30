@@ -74,6 +74,9 @@ fprintf(fid, '\\usepackage[Export,PGF]{adjustbox}\n');
 fprintf(fid, '\\setlength{\\parindent}{0in}\n');
 fprintf(fid, '\\newlength\\sectionheight\n');
 fprintf(fid, '\\begin{document}\n');
+fprintf(fid, '\\pgfdeclarelayer{background}\n');
+fprintf(fid, '\\pgfdeclarelayer{foreground}\n');
+fprintf(fid, '\\pgfsetlayers{background,main,foreground}\n');
 fprintf(fid, '\\centering\n');
 
 o.pages.write(fid);
