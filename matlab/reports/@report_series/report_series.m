@@ -37,7 +37,7 @@ o.data = '';
 
 o.graphLineColor = 'black';
 o.graphLineStyle = 'solid';
-o.graphLineWidth = 'thin';
+o.graphLineWidth = 0.5;
 
 o.graphMarker = '';
 o.graphMarkerEdgeColor = 'auto';

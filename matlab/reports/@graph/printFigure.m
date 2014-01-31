@@ -47,13 +47,6 @@ if fid == -1
 end
 
 fprintf(fid, '\\begin{tikzpicture}\n');
-%if isempty(o.graphSize)
-%    h = figure('visible','off');
-%else
-%    h = figure('visible','off','position',[1, 1, o.graphSize(1), o.graphSize(2)]);
-%end
-%hold on;
-%box on;
 
 if isempty(o.xrange)
     dd = o.seriesElements.getMaxRange();
@@ -62,20 +55,41 @@ else
 end
 
 ne = o.seriesElements.numSeriesElements();
-ymax = zeros(ne, 1);
-ymin = zeros(ne, 1);
 for i=1:ne
-    o.seriesElements(i).writeLine(fid, dd);
     ymax(i) = o.seriesElements(i).ymax(dd);
     ymin(i) = o.seriesElements(i).ymin(dd);
 end
 ymax = ceil(max(ymax));
 ymin = floor(min(ymin));
 
-fprintf(fid, '\\draw (1,%d) -- (1,%d);\n', ymin, ymax);
-fprintf(fid, '\\draw (1,%d) -- (%d,%d);\n', ymax, dd.ndat, ymax);
-fprintf(fid, '\\draw (1,%d) -- (%d,%d);\n', ymin, dd.ndat, ymin);
-fprintf(fid, '\\draw (%d,%d) -- (%d,%d);\n', dd.ndat, ymin, dd.ndat, ymax);
+fprintf(fid, '\\begin{axis}[%%\n');
+if o.showGrid
+    fprintf(fid, 'xmajorgrids,\nymajorgrids,\n');
+end
+fprintf(fid, ['width=6.0in,\n'...
+              'height=4.5in,\n'...
+              'scale only axis,\n'...
+              'xmin=1,\n'...
+              'xmax=%d,\n'...
+              'ymin=%d,\n'...
+              'ymax=%d,\n]\n'], dd.ndat, ymin, ymax);
+
+%if isempty(o.graphSize)
+%    h = figure('visible','off');
+%else
+%    h = figure('visible','off','position',[1, 1, o.graphSize(1), o.graphSize(2)]);
+%end
+%hold on;
+%box on;
+
+for i=1:ne
+    o.seriesElements(i).writeLine(fid, dd);
+end
+
+%fprintf(fid, '\\draw (1,%d) -- (1,%d);\n', ymin, ymax);
+%fprintf(fid, '\\draw (1,%d) -- (%d,%d);\n', ymax, dd.ndat, ymax);
+%fprintf(fid, '\\draw (1,%d) -- (%d,%d);\n', ymin, dd.ndat, ymin);
+%fprintf(fid, '\\draw (%d,%d) -- (%d,%d);\n', dd.ndat, ymin, dd.ndat, ymax);
 
 if ~isempty(o.yrange)
     fprintf(fid, '\\clip (1,%f) rectangle (%d, %f);\n', o.yrange(1), ...
@@ -90,28 +104,32 @@ if ~isempty(o.shade)
     assert(~isempty(x1) && ~isempty(x2), ['@graph.createGraph: either ' ...
                         date2string(o.shade(1)) ' or ' date2string(o.shade(end)) ' is not in the date ' ...
                         'range of data selected.']);
-    fprintf(fid, '\\begin{pgfonlayer}{background}\n');
-    fprintf(fid, ['  \\fill[green!20!white] '...
-                  '(%d,%d) -- (%d, %d) -- (%d, %d) -- (%d, %d) -- cycle;\n'], ...
-            x1, ymin, x1, ymax, x2, ymax, x2, ymin);
-    fprintf(fid, '\\end{pgfonlayer}\n');
+    fprintf(fid, ['\\addplot[area legend,solid,fill=green,opacity=.2,draw=black,forget plot]\n'...
+                  'table[row sep=crcr]{\n'...
+                  'x y\\\\\n'...
+                  '%d %d\\\\\n'...
+                  '%d %d\\\\\n'...
+                  '%d %d\\\\\n'...
+                  '%d %d\\\\\n'...
+                  '};\n'], x1, ymin, x1, ymax, x2, ymax, x2, ymin);
 end
 
-if o.showGrid
-    fprintf(fid, '\\begin{pgfonlayer}{background}\n');
-    fprintf(fid, '\\draw[style=help lines] (1,%d) grid (%d,%d);\n', ymin, dd.ndat, ymax);
-    fprintf(fid, '\\end{pgfonlayer}\n');
+fprintf(fid, '\\end{axis}\n')
+fprintf(fid, '\\end{tikzpicture}\n');
+status = fclose(fid);
+if status == -1
+    error('@graph.printFigure: closing %s\n', o.filename);
 end
+return
+%if o.showZeroline
+%    fprintf(fid, '\\begin{pgfonlayer}{background}\n');
+%    fprintf(fid, '\\draw (1,0) -- (%d,0);\n', dd.ndat);
+%    fprintf(fid, '\\end{pgfonlayer}\n');
+%end
 
-if o.showZeroline
-    fprintf(fid, '\\begin{pgfonlayer}{background}\n');
-    fprintf(fid, '\\draw (1,0) -- (%d,0);\n', dd.ndat);
-    fprintf(fid, '\\end{pgfonlayer}\n');
-end
-
-if ~isempty(o.xTickLabels)
-    xTickLabels = o.xTickLabels;
-end
+%if ~isempty(o.xTickLabels)
+%    xTickLabels = o.xTickLabels;
+%end
 
 fprintf(fid, '\\foreach \\pos/\\label in {');
 for i=1:length(x)
@@ -126,12 +144,6 @@ fprintf(fid, ['}\n  \\draw (\\pos,%d) -- (\\pos,%f) (\\pos cm,%d) node\n'...
         ymin, ymin - 0.1, ymin - 0.7);
 
 
-fprintf(fid, '\\end{tikzpicture}\n');
-status = fclose(fid);
-if status == -1
-    error('@graph.printFigure: closing %s\n', o.filename);
-end
-return
 
 
 if o.showLegend

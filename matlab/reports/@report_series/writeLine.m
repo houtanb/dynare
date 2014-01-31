@@ -36,7 +36,8 @@ assert(~isempty(o.data) && isa(o.data, 'dseries'), ['@report_series.writeLine: m
 % Line
 assert(ischar(o.graphLineColor), '@report_series.writeLine: graphLineColor must be a string');
 assert(ischar(o.graphLineStyle), '@report_series.writeLine: graphLineStyle must be a string');
-assert(ischar(o.graphLineWidth), '@report_series.writeLine: graphLineWidth must be a string');
+assert(isfloat(o.graphLineWidth) && o.graphLineWidth > 0, ...
+                    '@report_series.writeLine: graphLineWidth must be a positive number');
 
 % GraphMarker
 valid_graphMarker = {'+', 'o', '*', '.', 'x', 's', 'square', 'd', 'diamond', ...
@@ -77,15 +78,13 @@ if any(stz)
     thedata(stz) = 0;
 end
 
-fprintf(fid, '\\draw[%s, %s, %s] ', o.graphLineStyle, o.graphLineWidth, o.graphLineColor);
-ndat = ds.dates.ndat;
-for i=1:ndat
-    fprintf(fid, '(%d, %f)', i, thedata(i));
-    if i ~= ndat
-        fprintf(fid, '--');
-    end
+fprintf(fid, '\\addplot[color=%s,%s,line width=%fpt,forget plot] coordinates\n{', ...
+        o.graphLineColor, o.graphLineStyle, o.graphLineWidth);
+for i=1:ds.dates.ndat
+    fprintf(fid, '(%d,%f)', i, thedata(i));
 end
-fprintf(fid, ';\n');
+fprintf(fid,'};');
+
 
 %opt = {'XData', 1:length(thedata)};
 

@@ -73,6 +73,7 @@ fprintf(fid, '\\renewcommand{\\bottomfraction}{0.8}\n');
 fprintf(fid, '\\usepackage[Export,PGF]{adjustbox}\n');
 fprintf(fid, '\\setlength{\\parindent}{0in}\n');
 fprintf(fid, '\\newlength\\sectionheight\n');
+fprintf(fid, '\\pgfplotsset{compat=1.8}\n');
 fprintf(fid, '\\begin{document}\n');
 fprintf(fid, '\\pgfdeclarelayer{background}\n');
 fprintf(fid, '\\pgfdeclarelayer{foreground}\n');
