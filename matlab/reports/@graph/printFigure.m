@@ -72,14 +72,6 @@ end
 ymax = ceil(max(ymax));
 ymin = floor(min(ymin));
 
-if o.showGrid
-    fprintf(fid, '\\draw[style=help lines] (1,%d) grid (%d,%d);\n', ymin, dd.ndat, ymax);
-end
-
-if o.showZeroline
-    fprintf(fid, '\\draw (1,0) -- (%d,0);\n', dd.ndat);
-end
-
 fprintf(fid, '\\draw (1,%d) -- (1,%d);\n', ymin, ymax);
 fprintf(fid, '\\draw (1,%d) -- (%d,%d);\n', ymax, dd.ndat, ymax);
 fprintf(fid, '\\draw (1,%d) -- (%d,%d);\n', ymin, dd.ndat, ymin);
@@ -105,6 +97,17 @@ if ~isempty(o.shade)
     fprintf(fid, '\\end{pgfonlayer}\n');
 end
 
+if o.showGrid
+    fprintf(fid, '\\begin{pgfonlayer}{background}\n');
+    fprintf(fid, '\\draw[style=help lines] (1,%d) grid (%d,%d);\n', ymin, dd.ndat, ymax);
+    fprintf(fid, '\\end{pgfonlayer}\n');
+end
+
+if o.showZeroline
+    fprintf(fid, '\\begin{pgfonlayer}{background}\n');
+    fprintf(fid, '\\draw (1,0) -- (%d,0);\n', dd.ndat);
+    fprintf(fid, '\\end{pgfonlayer}\n');
+end
 
 fprintf(fid, '\n\\end{tikzpicture}\n');
 status = fclose(fid);
