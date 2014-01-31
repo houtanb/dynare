@@ -83,17 +83,17 @@ if ~isempty(o.yrange)
 end
 
 x = 1:1:dd.ndat;
-xlabels = strings(dd);
+xTickLabels = strings(dd);
 if ~isempty(o.shade)
-    x1 = find(strcmpi(date2string(o.shade(1)), xlabels));
-    x2 = find(strcmpi(date2string(o.shade(end)), xlabels));
+    x1 = find(strcmpi(date2string(o.shade(1)), xTickLabels));
+    x2 = find(strcmpi(date2string(o.shade(end)), xTickLabels));
     assert(~isempty(x1) && ~isempty(x2), ['@graph.createGraph: either ' ...
                         date2string(o.shade(1)) ' or ' date2string(o.shade(end)) ' is not in the date ' ...
                         'range of data selected.']);
     fprintf(fid, '\\begin{pgfonlayer}{background}\n');
     fprintf(fid, ['  \\fill[green!20!white] '...
-                  '(%d,%d) -- (%d, %d) -- (%d, %d) -- (%d, %d) -- cycle;\n'...
-                  ''], x1, ymin, x1, ymax, x2, ymax, x2, ymin);
+                  '(%d,%d) -- (%d, %d) -- (%d, %d) -- (%d, %d) -- cycle;\n'], ...
+            x1, ymin, x1, ymax, x2, ymax, x2, ymin);
     fprintf(fid, '\\end{pgfonlayer}\n');
 end
 
@@ -109,29 +109,30 @@ if o.showZeroline
     fprintf(fid, '\\end{pgfonlayer}\n');
 end
 
-fprintf(fid, '\n\\end{tikzpicture}\n');
+if ~isempty(o.xTickLabels)
+    xTickLabels = o.xTickLabels;
+end
+
+fprintf(fid, '\\foreach \\pos/\\label in {');
+for i=1:length(x)
+    fprintf(fid, '%d/%s', x(i), lower(xTickLabels{i}));
+    if i~=length(x)
+        fprintf(fid,',');
+    end
+end
+
+fprintf(fid, ['}\n  \\draw (\\pos,%d) -- (\\pos,%f) (\\pos cm,%d) node\n'...
+              '  [anchor=south,inner sep=1pt,rotate=45]  {\\label};\n'],...
+        ymin, ymin - 0.1, ymin - 0.7);
+
+
+fprintf(fid, '\\end{tikzpicture}\n');
 status = fclose(fid);
 if status == -1
     error('@graph.printFigure: closing %s\n', o.filename);
 end
 return
 
-if isempty(o.xTickLabels)
-    xticks = get(gca, 'XTick');
-    xTickLabels = cell(1, length(xticks));
-    for i=1:length(xticks)
-        if xticks(i) >= x(1) && ...
-                xticks(i) <= x(end)
-            xTickLabels{i} = xlabels{xticks(i)};
-        else
-            xTickLabels{i} = '';
-        end
-    end
-else
-    set(gca, 'XTick', o.xTicks);
-    xTickLabels = o.xTickLabels;
-end
-set(gca, 'XTickLabel', xTickLabels);
 
 if o.showLegend
     lh = legend(line_handles, o.seriesElements.getTexNames(), ...
