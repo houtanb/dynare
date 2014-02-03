@@ -66,6 +66,26 @@ fprintf(fid, '\\begin{axis}[%%\n');
 if o.showGrid
     fprintf(fid, 'xmajorgrids,\nymajorgrids,\n');
 end
+
+if ~isempty(o.xlabel)
+    fprintf(fid, 'xlabel=%s,\n', o.xlabel);
+end
+
+if ~isempty(o.ylabel)
+    fprintf(fid, 'ylabel=%s,\n', o.ylabel);
+end
+
+% set tick labels
+if isempty(o.xTickLabels)
+    xTickLabels = strings(dd);
+else
+    xTickLabels = o.xTickLabels;
+end
+
+if ~isempty(xTickLabels)
+    fprintf(fid,'minor xtick={1,2,...,%d},\n', dd.ndat);
+end
+
 fprintf(fid, ['width=6.0in,\n'...
               'height=4.5in,\n'...
               'scale only axis,\n'...
@@ -74,31 +94,18 @@ fprintf(fid, ['width=6.0in,\n'...
               'ymin=%d,\n'...
               'ymax=%d,\n]\n'], dd.ndat, ymin, ymax);
 
-%if isempty(o.graphSize)
-%    h = figure('visible','off');
-%else
-%    h = figure('visible','off','position',[1, 1, o.graphSize(1), o.graphSize(2)]);
+%if ~isempty(o.yrange)
+%    fprintf(fid, '\\clip (1,%f) rectangle (%d, %f);\n', ...
+%            o.yrange(1), dd.ndat, o.yrange(2));
 %end
-%hold on;
-%box on;
 
-for i=1:ne
-    o.seriesElements(i).writeLine(fid, dd);
-end
-
-%fprintf(fid, '\\draw (1,%d) -- (1,%d);\n', ymin, ymax);
-%fprintf(fid, '\\draw (1,%d) -- (%d,%d);\n', ymax, dd.ndat, ymax);
-%fprintf(fid, '\\draw (1,%d) -- (%d,%d);\n', ymin, dd.ndat, ymin);
-%fprintf(fid, '\\draw (%d,%d) -- (%d,%d);\n', dd.ndat, ymin, dd.ndat, ymax);
-
-if ~isempty(o.yrange)
-    fprintf(fid, '\\clip (1,%f) rectangle (%d, %f);\n', o.yrange(1), ...
-            dd.ndat, o.yrange(2));
+if o.showZeroline
+    fprintf(fid, '\\addplot[black,line width=.5,forget plot] coordinates {(1,0)(%d,0)};',dd.ndat);
 end
 
 x = 1:1:dd.ndat;
-xTickLabels = strings(dd);
 if ~isempty(o.shade)
+    xTickLabels = strings(dd);
     x1 = find(strcmpi(date2string(o.shade(1)), xTickLabels));
     x2 = find(strcmpi(date2string(o.shade(end)), xTickLabels));
     assert(~isempty(x1) && ~isempty(x2), ['@graph.createGraph: either ' ...
@@ -114,18 +121,15 @@ if ~isempty(o.shade)
                   '};\n'], x1, ymin, x1, ymax, x2, ymax, x2, ymin);
 end
 
-fprintf(fid, '\\end{axis}\n')
-fprintf(fid, '\\end{tikzpicture}\n');
-status = fclose(fid);
-if status == -1
+for i=1:ne
+    o.seriesElements(i).writeLine(fid, dd);
+end
+
+fprintf(fid, '\\end{axis}\n\\end{tikzpicture}\n');
+if fclose(fid) == -1
     error('@graph.printFigure: closing %s\n', o.filename);
 end
 return
-%if o.showZeroline
-%    fprintf(fid, '\\begin{pgfonlayer}{background}\n');
-%    fprintf(fid, '\\draw (1,0) -- (%d,0);\n', dd.ndat);
-%    fprintf(fid, '\\end{pgfonlayer}\n');
-%end
 
 %if ~isempty(o.xTickLabels)
 %    xTickLabels = o.xTickLabels;
@@ -145,7 +149,6 @@ fprintf(fid, ['}\n  \\draw (\\pos,%d) -- (\\pos,%f) (\\pos cm,%d) node\n'...
 
 
 
-
 if o.showLegend
     lh = legend(line_handles, o.seriesElements.getTexNames(), ...
                 'orientation', o.legendOrientation, ...
@@ -156,25 +159,4 @@ if o.showLegend
         legend('boxoff');
     end
 end
-
-if ~isempty(o.xlabel)
-    xlabel(['$\textbf{\footnotesize ' o.xlabel '}$'], 'Interpreter', 'LaTex');
-end
-
-if ~isempty(o.ylabel)
-    ylabel(['$\textbf{\footnotesize ' o.ylabel '}$'], 'Interpreter', 'LaTex');
-end
-drawnow;
-
-
-disp('  converting to tex....');
-if isoctave && isempty(regexpi(computer, '.*apple.*', 'once'))
-    print(o.figname, '-dtikz');
-else
-    matlab2tikz('filename', o.figname, ...
-                'showInfo', false, ...
-                'showWarnings', false, ...
-                'checkForUpdates', false);
-end
-
 end

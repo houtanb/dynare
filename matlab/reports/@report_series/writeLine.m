@@ -78,7 +78,7 @@ if any(stz)
     thedata(stz) = 0;
 end
 
-fprintf(fid, '\\addplot[color=%s,%s,line width=%fpt,forget plot] coordinates\n{', ...
+fprintf(fid, '\\addplot[color=%s,%s,line width=%fpt,forget plot,line join=round] coordinates\n{', ...
         o.graphLineColor, o.graphLineStyle, o.graphLineWidth);
 for i=1:ds.dates.ndat
     fprintf(fid, '(%d,%f)', i, thedata(i));

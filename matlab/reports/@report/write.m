@@ -42,6 +42,7 @@ if strcmpi(o.orientation, 'landscape')
 end
 fprintf(fid, ']{geometry}\n');
 fprintf(fid, '\\usepackage{pdflscape, pgf, tikz, booktabs}\n');
+fprintf(fid, '\\usetikzlibrary{plotmarks}\n');
 fprintf(fid, ['\\makeatletter\n' ...
               '\\def\\blfootnote{\\gdef\\@thefnmark{}\\@footnotetext}\n' ...
               '\\makeatother\n']);
