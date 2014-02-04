@@ -41,8 +41,7 @@ if strcmpi(o.orientation, 'landscape')
     fprintf(fid, ',landscape');
 end
 fprintf(fid, ']{geometry}\n');
-fprintf(fid, '\\usepackage{pdflscape, pgf, tikz, booktabs}\n');
-fprintf(fid, '\\usetikzlibrary{plotmarks}\n');
+fprintf(fid, '\\usepackage{pdflscape, booktabs, pgfplots}\n');
 fprintf(fid, ['\\makeatletter\n' ...
               '\\def\\blfootnote{\\gdef\\@thefnmark{}\\@footnotetext}\n' ...
               '\\makeatother\n']);
@@ -51,9 +50,8 @@ if isoctave && isempty(regexpi(computer, '.*apple.*', 'once'))
     fprintf(fid, '\\usepackage[T1]{fontenc}\n');
     fprintf(fid, '\\usepackage[utf8x]{inputenc}\n');
     fprintf(fid, '\\usepackage{gnuplot-lua-tikz}\n');
-else
-    fprintf(fid, '\\usepackage{pgfplots}\n');
 end
+fprintf(fid, '\\pgfplotsset{compat=1.8}\n');
 
 fprintf(fid, '\\usepackage{color, colortbl}\n');
 fprintf(fid, '\\definecolor{LightCyan}{rgb}{0.88,1,1}\n');
@@ -74,7 +72,6 @@ fprintf(fid, '\\renewcommand{\\bottomfraction}{0.8}\n');
 fprintf(fid, '\\usepackage[Export,PGF]{adjustbox}\n');
 fprintf(fid, '\\setlength{\\parindent}{0in}\n');
 fprintf(fid, '\\newlength\\sectionheight\n');
-fprintf(fid, '\\pgfplotsset{compat=1.8}\n');
 fprintf(fid, '\\begin{document}\n');
 fprintf(fid, '\\pgfdeclarelayer{background}\n');
 fprintf(fid, '\\pgfdeclarelayer{foreground}\n');
