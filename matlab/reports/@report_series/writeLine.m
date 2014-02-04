@@ -78,12 +78,12 @@ if any(stz)
     thedata(stz) = 0;
 end
 
-fprintf(fid, '\\addplot[color=%s,%s,line width=%fpt,forget plot,line join=round] coordinates\n{', ...
-        o.graphLineColor, o.graphLineStyle, o.graphLineWidth);
+fprintf(fid, '%%series %s\n\\addplot[color=%s,%s,line width=%fpt,forget plot,line join=round] coordinates {', ...
+        o.data.name{:}, o.graphLineColor, o.graphLineStyle, o.graphLineWidth);
 for i=1:ds.dates.ndat
     fprintf(fid, '(%d,%f)', i, thedata(i));
 end
-fprintf(fid,'};');
+fprintf(fid,'};%%\n');
 
 
 %opt = {'XData', 1:length(thedata)};

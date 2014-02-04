@@ -46,7 +46,7 @@ if fid == -1
     error(['@graph.printFigure: ' msg]);
 end
 
-fprintf(fid, '\\begin{tikzpicture}\n');
+fprintf(fid, '\\begin{tikzpicture}%%\n');
 
 if isempty(o.xrange)
     dd = o.seriesElements.getMaxRange();
@@ -106,7 +106,7 @@ fprintf(fid, ['width=6.0in,\n'...
               'xmin=1,\n'...
               'xmax=%d,\n'...
               'ymin=%d,\n'...
-              'ymax=%d,\n]\n'], dd.ndat, ymin, ymax);
+              'ymax=%d,\n]%%\n'], dd.ndat, ymin, ymax);
 
 %if ~isempty(o.yrange)
 %    fprintf(fid, '\\clip (1,%f) rectangle (%d, %f);\n', ...
@@ -114,7 +114,7 @@ fprintf(fid, ['width=6.0in,\n'...
 %end
 
 if o.showZeroline
-    fprintf(fid, '\\addplot[black,line width=.5,forget plot] coordinates {(1,0)(%d,0)};',dd.ndat);
+    fprintf(fid, '%%zeroline\n\\addplot[black,line width=.5,forget plot] coordinates {(1,0)(%d,0)};%%\n',dd.ndat);
 end
 
 if ~isempty(o.shade)
@@ -133,7 +133,7 @@ for i=1:ne
     o.seriesElements(i).writeLine(fid, dd);
 end
 
-fprintf(fid, '\\end{axis}\n\\end{tikzpicture}\n');
+fprintf(fid, '\\end{axis}\\end{tikzpicture}\n');
 if fclose(fid) == -1
     error('@graph.printFigure: closing %s\n', o.filename);
 end
