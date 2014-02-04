@@ -62,25 +62,39 @@ end
 ymax = ceil(max(ymax));
 ymin = floor(min(ymin));
 
-fprintf(fid, '\\begin{axis}[%%\n');
+fprintf(fid, '\\begin{axis}[');
 if o.showGrid
-    fprintf(fid, 'xmajorgrids,\nymajorgrids,\n');
+    fprintf(fid, 'xmajorgrids,ymajorgrids,');
 end
 
 if ~isempty(o.xlabel)
-    fprintf(fid, 'xlabel=%s,\n', o.xlabel);
+    fprintf(fid, 'xlabel=%s,', o.xlabel);
 end
 
 if ~isempty(o.ylabel)
-    fprintf(fid, 'ylabel=%s,\n', o.ylabel);
+    fprintf(fid, 'ylabel=%s,', o.ylabel);
 end
 
 % set tick labels
+x = 1:1:dd.ndat;
 if isempty(o.xTickLabels)
     xTickLabels = strings(dd);
+    fprintf(fid, 'xticklabels={');
+    for i = 1:length(x)
+        fprintf(fid,'%s,',lower(xTickLabels{i}));
+    end
+    fprintf(fid, '},xtick={');
+    for i = 1:length(x)
+        fprintf(fid, '%d',x(i));
+        if i ~= length(x)
+            fprintf(fid,',');
+        end
+    end
+    fprintf(fid, '},');
 else
     xTickLabels = o.xTickLabels;
 end
+fprintf(fid, 'x tick label style={rotate=90,anchor=east},\n');
 
 if ~isempty(xTickLabels)
     fprintf(fid,'minor xtick={1,2,...,%d},\n', dd.ndat);
@@ -103,7 +117,6 @@ if o.showZeroline
     fprintf(fid, '\\addplot[black,line width=.5,forget plot] coordinates {(1,0)(%d,0)};',dd.ndat);
 end
 
-x = 1:1:dd.ndat;
 if ~isempty(o.shade)
     xTickLabels = strings(dd);
     x1 = find(strcmpi(date2string(o.shade(1)), xTickLabels));
@@ -130,24 +143,6 @@ if fclose(fid) == -1
     error('@graph.printFigure: closing %s\n', o.filename);
 end
 return
-
-%if ~isempty(o.xTickLabels)
-%    xTickLabels = o.xTickLabels;
-%end
-
-fprintf(fid, '\\foreach \\pos/\\label in {');
-for i=1:length(x)
-    fprintf(fid, '%d/%s', x(i), lower(xTickLabels{i}));
-    if i~=length(x)
-        fprintf(fid,',');
-    end
-end
-
-fprintf(fid, ['}\n  \\draw (\\pos,%d) -- (\\pos,%f) (\\pos cm,%d) node\n'...
-              '  [anchor=south,inner sep=1pt,rotate=45]  {\\label};\n'],...
-        ymin, ymin - 0.1, ymin - 0.7);
-
-
 
 if o.showLegend
     lh = legend(line_handles, o.seriesElements.getTexNames(), ...
