@@ -76,25 +76,25 @@ if ~isempty(o.ylabel)
 end
 
 % set tick labels
-x = 1:1:dd.ndat;
 if isempty(o.xTickLabels)
+    x = 1:1:dd.ndat;
     xTickLabels = strings(dd);
-    fprintf(fid, 'xticklabels={');
-    for i = 1:length(x)
-        fprintf(fid,'%s,',lower(xTickLabels{i}));
-    end
-    fprintf(fid, '},xtick={');
-    for i = 1:length(x)
-        fprintf(fid, '%d',x(i));
-        if i ~= length(x)
-            fprintf(fid,',');
-        end
-    end
-    fprintf(fid, '},');
 else
+    x = o.xTicks;
     xTickLabels = o.xTickLabels;
 end
-fprintf(fid, 'x tick label style={rotate=90,anchor=east},\n');
+fprintf(fid, 'xticklabels={');
+for i = 1:length(x)
+    fprintf(fid,'%s,',lower(xTickLabels{i}));
+end
+fprintf(fid, '},xtick={');
+for i = 1:length(x)
+    fprintf(fid, '%d',x(i));
+    if i ~= length(x)
+        fprintf(fid,',');
+    end
+end
+fprintf(fid, '},x tick label style={rotate=90,anchor=east},\n');
 
 if ~isempty(xTickLabels)
     fprintf(fid,'minor xtick={1,2,...,%d},\n', dd.ndat);
