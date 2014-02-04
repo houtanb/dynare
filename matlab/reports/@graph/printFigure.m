@@ -46,7 +46,7 @@ if fid == -1
     error(['@graph.printFigure: ' msg]);
 end
 
-fprintf(fid, '\\begin{tikzpicture}%%\n');
+fprintf(fid, '\\begin{tikzpicture}');
 
 if isempty(o.xrange)
     dd = o.seriesElements.getMaxRange();
@@ -62,24 +62,26 @@ end
 ymax = ceil(max(ymax));
 ymin = floor(min(ymin));
 
-fprintf(fid, '\\begin{axis}[');
+fprintf(fid, '\\begin{axis}[%%\n');
 if o.showGrid
-    fprintf(fid, 'xmajorgrids,ymajorgrids,');
+    fprintf(fid, 'xminorgrids=true,%%\nyminorgrids=true,%%\n');
 end
 
 if ~isempty(o.xlabel)
-    fprintf(fid, 'xlabel=%s,', o.xlabel);
+    fprintf(fid, 'xlabel=%s,%%\n', o.xlabel);
 end
 
 if ~isempty(o.ylabel)
-    fprintf(fid, 'ylabel=%s,', o.ylabel);
+    fprintf(fid, 'ylabel=%s,%%\n', o.ylabel);
 end
 
 % set tick labels
 if isempty(o.xTickLabels)
     x = 1:1:dd.ndat;
     xTickLabels = strings(dd);
+    fprintf(fid, 'xminorticks=true,%%\nyminorticks=true,%%\n');
 else
+    fprintf(fid,'minor xtick,%%\n', dd.ndat);
     x = o.xTicks;
     xTickLabels = o.xTickLabels;
 end
@@ -87,26 +89,21 @@ fprintf(fid, 'xticklabels={');
 for i = 1:length(x)
     fprintf(fid,'%s,',lower(xTickLabels{i}));
 end
-fprintf(fid, '},xtick={');
+fprintf(fid, '},%%\nxtick={');
 for i = 1:length(x)
     fprintf(fid, '%d',x(i));
     if i ~= length(x)
         fprintf(fid,',');
     end
 end
-fprintf(fid, '},x tick label style={rotate=90,anchor=east},\n');
-
-if ~isempty(xTickLabels)
-    fprintf(fid,'minor xtick={1,2,...,%d},\n', dd.ndat);
-end
-
-fprintf(fid, ['width=6.0in,\n'...
-              'height=4.5in,\n'...
-              'scale only axis,\n'...
-              'xmin=1,\n'...
-              'xmax=%d,\n'...
-              'ymin=%d,\n'...
-              'ymax=%d,\n]%%\n'], dd.ndat, ymin, ymax);
+fprintf(fid, '},%%\nx tick label style={rotate=90,anchor=east},%%\n');
+fprintf(fid, ['width=6.0in,%%\n'...
+              'height=4.5in,%%\n'...
+              'scale only axis,%%\n'...
+              'xmin=1,%%\n'...
+              'xmax=%d,%%\n'...
+              'ymin=%d,%%\n'...
+              'ymax=%d,%%\n]%%\n'], dd.ndat, ymin, ymax);
 
 %if ~isempty(o.yrange)
 %    fprintf(fid, '\\clip (1,%f) rectangle (%d, %f);\n', ...
