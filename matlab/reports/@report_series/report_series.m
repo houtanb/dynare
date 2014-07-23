@@ -59,7 +59,7 @@ o.tablePosColor = 'blue';
 o.tableMarkerLimit = 1e-4;
 
 o.tableSubSectionHeader = '';
-o.tableAlignRight = false;
+o.tableIndent = 0;
 
 o.tableRowColor = 'white';
 o.tableRowIndent = 0;

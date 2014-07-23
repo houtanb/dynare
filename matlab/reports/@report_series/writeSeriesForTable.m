@@ -58,10 +58,43 @@ assert(ischar(o.tablePosColor), '@report_series.writeSeriesForTable: tablePosCol
 assert(ischar(o.tableRowColor), '@report_series.writeSeriesForTable: tableRowColor must be a string');
 assert(isint(o.tableRowIndent), '@report_series.writeSeriesForTable: tableRowIndent must be an integer');
 assert(islogical(o.tableShowMarkers), '@report_series.writeSeriesForTable: tableShowMarkers must be true or false');
-assert(islogical(o.tableAlignRight), '@report_series.writeSeriesForTable: tableAlignRight must be true or false');
+assert(isint(o.tableIndent) && o.tableIndent >= 0, ...
+       '@report_series.writeSeriesForTable: tableIndent must be an integer');
 assert(isfloat(o.tableMarkerLimit), '@report_series.writeSeriesForTable: tableMarkerLimit must be a float');
 
 %% Write Output
+if ~isempty(o.tableSubSectionHeader)
+    fprintf(fid, '{');
+    for i=1:o.tableIndent
+        fprintf(fid, '\\quad');
+        if i == o.tableIndent
+            fprintf(fid, ' ');
+        end
+    end
+    fprintf(fid, '%s}', o.tableSubSectionHeader);
+    ncols = length(dates{1});
+    if o.tableDataRhs
+        ncols = ncols + length(dates{2});
+    end
+    for i=1:ncols
+        fprintf(fid, ' {}');
+    end
+    fprintf(fid, '\n');
+    return;
+end
+fprintf(fid, '{');
+for i=1:o.tableIndent
+    fprintf(fid, '\\quad');
+end
+fprintf(fid, ' %s}', o.data.tex{:});
+printSeries(o, fid, o.data, dates{1}, precision);
+if ~isempty(o.tableDataRhs)
+    printSeries(o, fid, o.tableDataRhs, dates{2}, precision);
+end
+fprintf(fid, '\n');
+return
+
+
 fprintf(fid, '%% Table Row (report_series)\n');
 if ~isempty(o.tableRowColor)
     fprintf(fid, '\\rowcolor{%s}', o.tableRowColor);

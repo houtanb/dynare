@@ -20,13 +20,15 @@ shortNames = {'US', 'EU', 'JA', 'EA6', 'LA6', 'RC6'};
 longNames  = {'Coca Cola', 'Kinder Bueno', 'Pizza', ...
               'Vegetarianism Is Good', 'OS X', 'Dothraki'};
 
+rep = rep.addSeries('tableSubSectionHeader', '\textbf{This Section Name}');
 for i=1:length(shortNames)
     db_a = db_a.tex_rename([seriesRootName shortNames{i}], longNames{i});
-    rep = rep.addSeries('data', db_a{[seriesRootName shortNames{i}]});
+    rep = rep.addSeries('data', db_a{[seriesRootName shortNames{i}]}, ...
+                        'tableIndent', 1);
     delta = dc_a{[seriesRootName shortNames{i}]}-db_a{[seriesRootName shortNames{i}]};
     delta = delta.tex_rename('$\Delta$');
     rep = rep.addSeries('data', delta, ...
                         'tableShowMarkers', true, ...
-                        'tableAlignRight', true);
+                        'tableIndent', 3);
 end
 end

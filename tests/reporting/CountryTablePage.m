@@ -43,7 +43,9 @@ notForOtherThree = {'BLT_', 'UNR_', 'UNR_BAR_', 'UNR_GAP_'};
 
 rep = rep.addTable('title', countryName, ...
                    'range', {trange, dates('2012a'):dates('2014a')}, ...
-                   'vlineAfter', {vline_after dates('2014q4')});
+                   'vlineAfterEndOfPeriod', true, ...
+                   'vlineAfter', {vline_after dates('2014q4')}, ...
+                   'highlightRows', true);
 
 
 
@@ -53,8 +55,8 @@ for i=1:length(seriesNames)
         continue
     end
     db_q = db_q.tex_rename([seriesNames{i}{1} countryAbbr], seriesNames{i}{2});
-    rep = rep.addSeries('data', db_q{[seriesNames{i}{1} countryAbbr]}, ...
-                        'tableDataRhs', db_a{[seriesNames{i}{1} countryAbbr]});
+    rep = rep.addSeries('data', db_q{[seriesNames{i}{1} countryAbbr]});
+    %                        'tableDataRhs', db_a{[seriesNames{i}{1} countryAbbr]});
     delta = db_q{[seriesNames{i}{1} countryAbbr]}-dc_q{[seriesNames{i}{1} countryAbbr]};
     delta = delta.tex_rename('$\Delta$');
 
@@ -63,6 +65,7 @@ for i=1:length(seriesNames)
     rep = rep.addSeries('data', delta, ...
                         'tableShowMarkers', true, ...
                         'tableRowIndent', 2, ...
-                        'tableDataRhs', deltaa);
+                        'tableIndent', 2);
+    %                        'tableDataRhs', deltaa);
 end
 end

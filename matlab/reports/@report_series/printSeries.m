@@ -38,7 +38,7 @@ precision  = 10^precision;
 data = dser(dates);
 data = setDataToZeroFromZeroTol(o, data);
 for i=1:size(data,1)
-    fprintf(fid, '&');
+    fprintf(fid, ' {');
     if o.tableShowMarkers
         if data(i) < -o.tableMarkerLimit
             fprintf(fid, '\\color{%s}', o.tableNegColor);
@@ -53,5 +53,6 @@ for i=1:size(data,1)
     if o.tableShowMarkers
         fprintf(fid, ']');
     end
+    fprintf(fid, '}');
 end
 end

@@ -53,7 +53,6 @@ end
 %         GDP Germany
 % this example would be two lh columns, with GDP Europe spanning both
 nlhc = 1;
-
 if isempty(o.range)
     dates = getMaxRange(o.series);
     o.range = {dates};
@@ -61,11 +60,108 @@ else
     dates = o.range{1};
 end
 ndates = dates.ndat;
+datedata = dates.time;
+years = unique(datedata(:, 1));
+switch dates.freq
+    case 1
+        sep = 'Y';
+    case 4
+        sep = 'Q';
+    case 12
+        sep = 'M';
+    case 52
+        sep = 'W';
+    otherwise
+        error('@report_table.writeTableFile: Invalid frequency.');
+end
 
 fprintf(fid, '%% Report_Table Object\n');
 fprintf(fid, '\\setlength{\\parindent}{6pt}\n');
 fprintf(fid, '\\setlength{\\tabcolsep}{4pt}\n');
-fprintf(fid, '\\begin{tabular}{@{}l');
+fprintf(fid, ['\\pgfplotstabletypeset[\n' ...
+              '     fixed,\n' ...
+              '     fixed zerofill,\n' ...
+              '     precision=%d,\n' ...
+              '     every head row/.style={\n' ...
+              '          before row={\n' ...
+              '         \\hline\n' ...
+              '         \\rowcolor{%s}\n'], o.precision, o.headerRowColor);
+if dates.freq ~= 1
+    fprintf(fid, '         \\multicolumn{1}{>{\\columncolor{white}}c}{} &');
+    fprintf(fid, '\\multicolumn{%d}{>{\\columncolor{white}}c}{%d} &', ...
+            max(dates.freq, dates(end).time(2))-dates(1).time(2)+1, years(1));
+    for i=2:length(years)-1
+        fprintf(fid, '\\multicolumn{%d}{>{\\columncolor{%s}}c}{%d} &', ...
+                dates.freq, o.headerRowColor, years(i));
+    end
+    if length(years) > 1
+        fprintf(fid, '\\multicolumn{%d}{>{\\columncolor{white}}c}{%d}\\\\\n', ...
+                dates(end).time(2), years(end));
+    end
+end
+fprintf(fid, ['         \\rowcolor{%s}\n' ...
+              '         },\n' ...
+              '         after row=\\hline,\n' ...
+              '     },\n'], o.headerRowColor);
+if o.highlightRows
+    fprintf(fid, ['     every even row/.style={\n' ...
+                  '         before row={\\rowcolor[gray]{0.9}},\n', ...
+                  '         after row={\\rowcolor{white}}},\n']);
+end
+fprintf(fid, ['     every last row/.style={\n' ...
+              '         after row=\\hline\n' ...
+              '     },\n']);
+fprintf(fid, '     columns/series/.style={column type=l|,column name={},string type},\n');
+
+
+for i=1:ndates
+    fprintf(fid, '     columns/y%d', dates(i).time(1));
+    if dates.freq ~= 1
+        fprintf(fid, '%s%d', sep, dates(i).time(2));
+    end
+    fprintf(fid, '/.style={column type=r');
+    if o.showVlines
+        fprintf(fid, '|');
+    else
+        if o.vlineAfterEndOfPeriod && dates(i).time(2) == dates.freq
+            fprintf(fid, '|');
+        end
+    end
+    if dates.freq == 1
+        fprintf(fid, ',column name=$%d$,string type},\n', dates(i).time(1));
+    else
+        fprintf(fid, ',column name=$%s%d$,string type},\n', sep, dates(i).time(2));
+    end
+end
+fprintf(fid, ']\n{\n');
+
+% Write headers
+fprintf(fid, 'series');
+for i=1:ndates
+    fprintf(fid, ' y%d', dates(i).time(1));
+    if dates.freq ~= 1
+        fprintf(fid, '%s%d ', sep, dates(i).time(2));
+    end
+end
+fprintf(fid, '\n');
+
+% Write Report_Table Data
+for i=1:ne
+    o.series{i}.writeSeriesForTable(fid, o.range, o.precision);
+    if o.showHlines
+        fprintf(fid, '\\hline\n');
+    end
+end
+
+
+fprintf(fid, '}\n');
+fprintf(fid, '%% End Report_Table Object\n');
+if fclose(fid) == -1
+    error('@report_table.writeTableFile: closing %s\n', o.filename);
+end
+return
+
+
 
 for i=1:ndates
     if o.showVlines
@@ -73,14 +169,14 @@ for i=1:ndates
     else
         fprintf(fid, 'r');
         if o.vlineAfterEndOfPeriod
-            if dates(i).time(2) == dates(i).freq
+            if o.range(i).time(2) == o.range(i).freq
                 fprintf(fid, '|');
             end
         end
         if ~isempty(o.vlineAfter)
             for j=1:length(o.vlineAfter)
-                if dates(i) == o.vlineAfter{j}
-                    if ~(o.vlineAfterEndOfPeriod && dates(i).time(2) == dates(i).freq)
+                if o.range(i) == o.vlineAfter{j}
+                    if ~(o.vlineAfterEndOfPeriod && o.range(i).time(2) == o.range(i).freq)
                         fprintf(fid, '|');
                     end
                 end
@@ -88,8 +184,7 @@ for i=1:ndates
         end
     end
 end
-datedata = dates.time;
-years = unique(datedata(:, 1));
+
 if length(o.range) > 1
     rhscols = strings(o.range{2});
     if o.range{2}.freq == 1
@@ -117,7 +212,7 @@ fprintf(fid, '\\toprule%%\n');
 
 % Column Headers
 thdr = num2cell(years, size(years, 1));
-if dates.freq == 1
+if o.range.freq == 1
     for i=1:size(thdr, 1)
         fprintf(fid, ' & %d', thdr{i, 1});
     end
@@ -128,7 +223,7 @@ else
     thdr{1, 2} = datedata(:, 2)';
     if size(thdr, 1) > 1
         for i=2:size(thdr, 1)
-            split = find(thdr{i-1, 2} == dates.freq, 1, 'first');
+            split = find(thdr{i-1, 2} == o.range.freq, 1, 'first');
             assert(~isempty(split), '@report_table.writeTableFile: Shouldn''t arrive here');
             thdr{i, 2} = thdr{i-1, 2}(split+1:end);
             thdr{i-1, 2} = thdr{i-1, 2}(1:split);
@@ -141,7 +236,7 @@ else
         fprintf(fid, ' & %s', rhscols{i});
     end
     fprintf(fid, '\\\\\\cline{%d-%d}%%\n', nlhc+1, ncols);
-    switch dates.freq
+    switch o.range.freq
         case 4
             sep = 'Q';
         case 12

@@ -34,6 +34,7 @@ function o = write(o, fid, pg, sec, row, col)
 % along with Dynare.  If not, see <http://www.gnu.org/licenses/>.
 
 assert(fid ~= -1);
+fprintf(fid, '\\maxsizebox{\\textwidth}{!}{');
 o = writeTableFile(o, pg, sec, row, col);
-fprintf(fid, '\\input{%s}', o.tableName);
+fprintf(fid, '\\input{%s}}', o.tableName);
 end

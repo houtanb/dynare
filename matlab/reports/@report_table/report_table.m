@@ -47,8 +47,12 @@ o.vlineAfterEndOfPeriod = false;
 
 o.data = '';
 o.seriesToUse = '';
-o.range = {};
+o.range = dates();
 o.precision = 1;
+
+o.headerRowColor = 'white';
+
+o.highlightRows = false;
 
 if nargin == 1
     assert(isa(varargin{1}, 'report_table'),['With one arg to Report_Table constructor, ' ...
@@ -77,7 +81,6 @@ end
 if ~iscell(o.range)
     o.range = {o.range};
 end
-
 if isdates(o.vlineAfter)
     o.vlineAfter = {o.vlineAfter};
 end
@@ -115,6 +118,9 @@ assert(iscellstr(o.titleFormat), ...
        '@report_table.report_table: titleFormat must be a cell array of string(s)');
 assert(ischar(o.tableName), '@report_table.report_table: tableName must be a string');
 assert(ischar(o.tableDirName), '@report_table.report_table: tableDirName must be a string');
+assert(ischar(o.headerRowColor), '@report_table.report_table: headerRowColor must be a string');
+assert(islogical(o.highlightRows), '@report_table.report_table: highlightRows must be true or false');
+
 
 % using o.seriesToUse, create series objects and put them in o.series
 if ~isempty(o.data)
