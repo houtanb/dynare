@@ -61,7 +61,7 @@ o.tableMarkerLimit = 1e-4;
 o.tableSubSectionHeader = '';
 o.tableAlignRight = false;
 
-o.tableRowColor = 'white';
+o.tableRowColor = '';
 o.tableRowIndent = 0;
 
 o.tableDataRhs = '';
