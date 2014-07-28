@@ -65,8 +65,20 @@ ndates = dates.ndat;
 fprintf(fid, '%% Report_Table Object\n');
 fprintf(fid, '\\setlength{\\parindent}{6pt}\n');
 fprintf(fid, '\\setlength{\\tabcolsep}{4pt}\n');
+if o.highlightRows
+    oddcolor = 'white';
+    evencolor = 'gray!25';
+    startrow = length(o.title) + 2;
+    if dates(1).freq ~= 1
+        startrow = startrow + 1;
+    end
+    if mod(startrow,2)
+        oddcolor = 'gray!25';
+        evencolor = 'white';
+    end
+    fprintf(fid, '\\rowcolors{%d}{%s}{%s}\n', startrow, oddcolor, evencolor);
+end
 fprintf(fid, '\\begin{tabular}{@{}l');
-
 for i=1:ndates
     fprintf(fid, 'r');
     if o.showVlines

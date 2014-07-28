@@ -11463,13 +11463,17 @@ reports. Default: @code{`black'}
 @end table
 @end defmethod
 
-@defmethod Report addTable data, showHlines, precision, range, seriesToUse, tableDirName, tableName, title, titleFormat, vlineAfter, vlineAfterEndOfPeriod, showVlines
+@defmethod Report addTable data, highlightRows, showHlines, precision, range, seriesToUse, tableDirName, tableName, title, titleFormat, vlineAfter, vlineAfterEndOfPeriod, showVlines
 Adds a @code{Table} to a @code{Section}.
 @optionshead
 @table @code
 
 @item data, @code{dseries}
 @xref{data}.
+
+@item highlightRows, @code{BOOLEAN}
+Whether or not to highlight alternating rows. This can be used in conjunction
+with @ref{tableRowColor}. Default: @code{false}
 
 @item showHlines, @code{BOOLEAN}
 Whether or not to show horizontal lines separating the rows. Default: @code{false}
@@ -11578,6 +11582,7 @@ quarterly @code{tableDataRhs} could point to the yearly averages of
 the quarterly series. This would cause quarterly data to be displayed
 followed by annual data. Default: @code{empty}
 
+@anchor{tableRowColor}
 @item tableRowColor, @code{STRING}
 The color that you want the row to be. Predefined values include
 @code{LightCyan} and @code{Gray}. Default: @code{no color}.

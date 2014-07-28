@@ -50,6 +50,8 @@ o.seriesToUse = '';
 o.range = {};
 o.precision = 1;
 
+o.highlightRows = false;
+
 if nargin == 1
     assert(isa(varargin{1}, 'report_table'),['With one arg to Report_Table constructor, ' ...
                         'you must pass a report_table object']);
@@ -107,6 +109,7 @@ assert(isempty(o.vlineAfter) || allCellsAreDates(o.vlineAfter), ...
 if o.showVlines
     o.vlineAfter = '';
 end
+assert(islogical(o.highlightRows), '@report_table.report_table: highlightRows must be true or false');
 assert(islogical(o.vlineAfterEndOfPeriod), ...
        '@report_table.report_table: vlineAfterEndOfPeriod must be true or false');
 assert(iscellstr(o.title), ...
