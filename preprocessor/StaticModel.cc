@@ -1515,7 +1515,12 @@ StaticModel::writeStaticCFile(const string &func_name) const
 }
 
 void
-StaticModel::writeStaticFile(const string &basename, bool block, bool bytecode, bool use_dll) const
+StaticModel::writeStaticJuliaFile(const string &basename) const
+{
+}
+
+void
+StaticModel::writeStaticFile(const string &basename, bool block, bool bytecode, bool use_dll, bool julia) const
 {
   int r;
 
@@ -1544,6 +1549,8 @@ StaticModel::writeStaticFile(const string &basename, bool block, bool bytecode, 
     }
   else if(use_dll)
     writeStaticCFile(basename);
+  else if(julia)
+    writeStaticJuliaFile(basename);
   else
     writeStaticMFile(basename);
   writeAuxVarRecursiveDefinitions(basename);

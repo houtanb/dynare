@@ -1113,6 +1113,23 @@ ModFile::writeExternalFilesJulia(const string &basename, FileOutputType output) 
   cout << "Processing outputs ..." << endl;
   symbol_table.writeJuliaOutput(jlOutputFile);
 
+  if (dynamic_model.equation_number() > 0)
+    {
+      if (!no_static)
+        {
+          static_model.writeStaticFile(basename, false, false, false, true)
+            //          static_model.writeParamsDerivativesFile(basename);
+        }
+
+      //      dynamic_model.writeDynamicFile(basename, block, byte_code, use_dll, mod_file_struct.order_option);
+      //      dynamic_model.writeParamsDerivativesFile(basename);
+    }
+
+  // Create steady state file
+  //  steady_state_model.writeSteadyStateFile(basename, mod_file_struct.ramsey_model_present);
+
+
   jlOutputFile << "end" << endl;
   jlOutputFile.close();
+  cout << "done" << endl;
 }

@@ -50,6 +50,9 @@ private:
   //! Writes static model file (C version)
   void writeStaticCFile(const string &func_name) const;
 
+  //! Writes static model file (Julia version)
+  void writeStaticJuliaFile(const string &func_name) const;
+
   //! Writes the static model equations and its derivatives
   void writeStaticModel(ostream &StaticOutput, bool use_dll) const;
 
