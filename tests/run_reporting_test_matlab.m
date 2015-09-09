@@ -32,6 +32,9 @@ end
 
 disp('');
 disp(['***  TESTING: run_reporting_test_matlab.m ***']);
+
+cput = cputime;
+save('wsMatreporting');
 try
     cd([top_test_dir filesep 'reporting']);
     db_a = dseries('db_a.csv');
@@ -43,6 +46,9 @@ try
 catch
     testFailed = true;
 end
+load('wsMatreporting');
+ecput = cputime - cput;
+delete('wsMatreporting.mat');
 
 cd(getenv('TOP_TEST_DIR'));
 fid = fopen('run_reporting_test_matlab.m.trs', 'w+');
@@ -57,6 +63,6 @@ else
   fprintf(fid,':number-failed-tests: 0\n');
   fprintf(fid,':list-of-passed-tests: run_reporting_test_matlab.m\n');
 end
-fprintf(fid,':cputime: %f\n',0.0);
+fprintf(fid,':cputime: %f\n', ecput);
 fclose(fid);
 exit;

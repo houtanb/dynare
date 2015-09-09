@@ -11,9 +11,10 @@ end
 mlist = get_directory_description('../matlab');
 
 failedtests = {};
-
 counter = 0;
 
+cput = cputime;
+save('wsMatunitary');
 for i = 1:length(mlist)
     f = [top_test_dir filesep mlist{i} ];
     if is_unitary_test_available(f)
@@ -26,6 +27,9 @@ for i = 1:length(mlist)
         end
     end
 end
+load('wsMatunitary');
+ecput = cputime - cput;
+delete('wsMatunitary.mat');
 
 cd(getenv('TOP_TEST_DIR'));
 if isoctave
@@ -43,6 +47,6 @@ else
   fprintf(fid,':number-tests: %d\n', counter);
   fprintf(fid,':number-failed-tests: 0\n');
 end
-fprintf(fid,':cputime: %f\n',0.0);
+fprintf(fid,':cputime: %f\n', ecput);
 fclose(fid);
 exit
