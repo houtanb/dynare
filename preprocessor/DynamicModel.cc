@@ -4623,6 +4623,18 @@ DynamicModel::detrendEquations()
 }
 
 void
+DynamicModel::writeEquations() const
+{
+  cout << endl << endl;
+  for (int i = 0; i < (int) equations.size(); i++)
+    {
+      cout << "EQUATION #" << i << ":" << endl;
+      equations[i]->write();
+      cout << endl << "--------------------------------------" << endl;
+    }
+}
+
+void
 DynamicModel::removeTrendVariableFromEquations()
 {
   for (int i = 0; i < (int) equations.size(); i++)

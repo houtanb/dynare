@@ -277,6 +277,8 @@ public:
   //! Returns number of dynamic only equations
   size_t dynamicOnlyEquationsNbr() const;
 
+  void writeEquations() const;
+
   //! Writes LaTeX file with the equations of the dynamic model
   void writeLatexFile(const string &basename, const bool write_equation_tags) const;
 
