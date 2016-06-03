@@ -3701,13 +3701,24 @@ DynamicModel::toStatic(StaticModel &static_model) const
       try
         {
           // If yes, replace it by an equation marked [static]
+          expr_t eq;
+          int lineno;
           if (is_dynamic_only)
             {
-              static_model.addEquation(static_only_equations[static_only_index]->toStatic(static_model), static_only_equations_lineno[static_only_index]);
+              eq = static_only_equations[static_only_index]->toStatic(static_model);
+              lineno = static_only_equations_lineno[static_only_index];
               static_only_index++;
             }
           else
-            static_model.addEquation(equations[i]->toStatic(static_model), equations_lineno[i]);
+            {
+              eq = equations[i]->toStatic(static_model);
+              lineno = equations_lineno[i];
+            }
+
+          if (i < equations.size() - aux_equations.size())
+            static_model.addEquation(eq->substituteStaticAuxiliaryVariable(), lineno);
+          else
+            static_model.addEquation(eq, lineno);
         }
       catch (DataTree::DivisionByZeroException)
         {
@@ -3719,7 +3730,7 @@ DynamicModel::toStatic(StaticModel &static_model) const
   // Convert auxiliary equations
   for (deque<BinaryOpNode *>::const_iterator it = aux_equations.begin();
        it != aux_equations.end(); it++)
-    static_model.addAuxEquation((*it)->toStatic(static_model));
+    static_model.addAuxEquation(dynamic_cast<BinaryOpNode *>((*it)->toStatic(static_model))->substituteStaticAuxiliaryDefinition());
 }
 
 bool
