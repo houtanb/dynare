@@ -81,6 +81,9 @@ end
 
 if options_.k_order_solver;
     if options_.risky_steadystate
+        if options_.linear || M_.hessian_eq_zero
+            error('You cannot use a linear model with risky steady state.');
+        end
         [dr,info] = dyn_risky_steadystate_solver(oo_.steady_state,M_,dr, ...
                                              options_,oo_);
     else
