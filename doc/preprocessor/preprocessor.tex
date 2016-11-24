@@ -30,7 +30,7 @@
 
 \institute{CEPREMAP}
 
-\date{October 19, 2007}
+\date{1 February 2017}
 
 \AtBeginSection[]
 {
@@ -46,7 +46,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{General overview}
+  \frametitle{Overview}
   \begin{center}
     \includegraphics[width=11cm]{overview.png}
   \end{center}
@@ -63,11 +63,9 @@
   \begin{itemize}
   \item Traditional way of programming: a program is a list of instructions (organized in functions) which manipulate data
   \item OOP is an alternative programming paradigm that uses \alert{objects} and their interactions to design programs
-    \pause
   \item With OOP, programming becomes a kind of modelization: each object of the program should modelize a real world object, or a mathematical object (\textit{e.g.} a matrix, an equation, a model...)
   \item Each object can be viewed as an independent little machine with a distinct role or responsibility
   \item Each object is capable of receiving messages, processing data, and sending messages to other objects
-    \pause
   \item Main advantage of OOP is \alert{modularity}, which leads to greater reusability, flexibility and maintainability
   \end{itemize}
 \end{frame}
@@ -77,11 +75,10 @@
   \framesubtitle{Definition and example}
   \begin{itemize}
   \item An \alert{object} is the bundle of:
-    \begin{itemize} 
+    \begin{itemize}
     \item several variables (called its \alert{attributes}), which modelize the characteristics (or the state) of the object
     \item several functions (called its \alert{methods}) which operate on the attributes, and which modelize the behaviour of the object (the actions it can perform)
     \end{itemize}
-    \pause
   \item Example: suppose we want to modelize a coffee machine
     \begin{itemize}
     \item The coffee machine (in real life) is a box, with an internal counter for the credit balance, a slot to put coins in, and a button to get a coffee
@@ -524,7 +521,7 @@ double PositDefMatrix::det()
 \begin{itemize}
 \item The lexical analyzer recognizes the ``words'' (or \alert{lexemes}) of the language
 \item Lexical analyzer is described in \texttt{DynareFlex.ll}. This file is transformed into C++ source code by the program \texttt{flex}
-\item This file gives the list of the known lexemes (described by regular expressions), and gives the associated \alert{token} for each of them
+\item This file details the list of known lexemes (described by regular expressions) and the associated \alert{token} for each of them
 \item For punctuation (semicolon, parentheses, ...), operators (+, -, ...) or fixed keywords (\textit{e.g.} \texttt{model}, \texttt{varexo}, ...), the token is simply an integer uniquely identifying the lexeme
 \item For variable names or numbers, the token also contains the associated string for further processing
 %\item \textit{Note:} the list of tokens can be found at the beginning of \texttt{DynareBison.yy}
@@ -610,9 +607,9 @@ expression := expression PLUS expression
 \frametitle{Semantic actions}
 \begin{itemize}
 \item So far we have only described how to accept valid \texttt{mod} files and to reject others
-\item But validating is not enough: one need to do something about what has been parsed
-\item Each rule of the grammar can have a \alert{semantic action} associated to it: C/C++ code enclosed in curly braces
-\item Each rule can return a semantic value (referenced to by \texttt{\$\$} in the action)
+\item But validating is not enough: one needs to do something with the parsed \texttt{mod} file
+\item Every grammar rule can have a \alert{semantic action} associated with it: C/C++ code enclosed by curly braces
+\item Every rule can return a semantic value (referenced by \texttt{\$\$} in the action)
 \item In the action, it is possible to refer to semantic values returned by components of the rule (using \texttt{\$1}, \texttt{\$2}, ...)
 \end{itemize}
 \end{frame}
@@ -649,7 +646,7 @@ expression := expression PLUS expression
 
 The class \texttt{ParsingDriver} has the following roles:
 \begin{itemize}
-\item Given the \texttt{mod} filename, it opens the file and launches the lexical and syntaxic analyzers on it
+\item It opens the \texttt{mod} file and launches the lexical and syntaxic analyzers on it
 \item It implements most of the semantic actions of the grammar
 \item By doing so, it creates an object of type \texttt{ModFile}, which is the data structure representing the \texttt{mod} file
 \item Or, if there is a parsing error (unknown keyword, undeclared symbol, syntax error), it displays the line and column numbers where the error occurred, and exits
@@ -661,15 +658,15 @@ The class \texttt{ParsingDriver} has the following roles:
 \begin{frame}
   \frametitle{The \texttt{ModFile} class}
   \begin{itemize}
-  \item This class is the internal data structure used to store all the informations contained in a \texttt{mod} file
+  \item This class is the internal data structure used to store all the information contained in a \texttt{mod} file
   \item One instance of the class represents one \texttt{mod} file
   \item The class contains the following elements (as class members):
     \begin{itemize}
-    \item a symbol table
-    \item a numerical constants table
-    \item two trees of expressions: one for the model, and one for the expressions outside the model
-    \item the list of the statements (parameter initializations, shocks block, \texttt{check}, \texttt{steady}, \texttt{simul}, ...)
-    \item an evaluation context
+    \item a symbol table, numerical constants table, external functions table
+    \item trees of expressions: static model, dynamic model, original model, ramsey dynamic model, steady state model, trend dynamic model, ...
+    \item the list of the statements (parameter initializations, \texttt{shocks} block, \texttt{check}, \texttt{steady}, \texttt{simul}, ...)
+    \item model-specification and user-preference variables: \texttt{block}, \texttt{bytecode}, \texttt{use\_dll}, \texttt{no\_static}, ...
+    \item an evaluation context (containing \texttt{initval} and parameter values)
     \end{itemize}
   \item An instance of \texttt{ModFile} is the output of the parsing process (return value of \texttt{ParsingDriver::parse()})
   \end{itemize}
@@ -678,12 +675,12 @@ The class \texttt{ParsingDriver} has the following roles:
 \begin{frame}
   \frametitle{The symbol table (1/3)}
   \begin{itemize}
-  \item A \alert{symbol} is simply the name of a variable, of a parameter or of a function unknown to the preprocessor: actually everything that is not recognized as a Dynare keyword
-  \item The \alert{symbol table} is a simple structure used to maintain the list of the symbols used in the \texttt{mod} file
-  \item For each symbol, stores:
+  \item A \alert{symbol} is simply the name of a variable (endogenous, exogenous, local, auxiliary, etc), parameter, external functions, \ldots basically everything that is not recognized as a Dynare keyword
+  \item \alert{SymbolTable} is a simple class used to maintain the list of the symbols used in the \texttt{mod} file
+  \item For each symbol, it stores:
     \begin{itemize}
-    \item its name (a string)
-    \item its type (an integer)
+    \item its name, tex\_name, and long\_name (strings, some of  which can be empty)
+    \item its type (an enumerator defined in \texttt{CodeInterpreter.hh})
     \item a unique integer identifier (unique for a given type, but not across types)
     \end{itemize}
   \end{itemize}
@@ -698,8 +695,11 @@ The class \texttt{ParsingDriver} has the following roles:
   \item Exogenous deterministic variables
   \item Parameters
   \item Local variables inside model: declared with a pound sign (\#) construction
-  \item Local variables outside model: no declaration needed, not interpreted by the preprocessor (\textit{e.g.} Matlab loop indexes)
-  \item Names of functions unknown to the preprocessor: no declaration needed, not interpreted by the preprocessor, only allowed outside model (until we create an interface for providing custom functions with their derivatives)
+  \item Local variables outside model: no declaration needed (\textit{e.g.} lhs symbols in equations from \texttt{steady\_state\_model} block, expression outside of model block, \ldots)
+  \item External functions
+  \item Trend variables
+  \item Log Trend variables
+  \item Unused Endogenous variables (created when \texttt{nostrict} option is passed)
   \end{itemize}
 \end{frame}
 
@@ -708,7 +708,7 @@ The class \texttt{ParsingDriver} has the following roles:
   \begin{itemize}
   \item Symbol table filled in:
     \begin{itemize}
-    \item using the \texttt{var}, \texttt{varexo}, \texttt{varexo\_det}, \texttt{parameter} declarations
+    \item using the \texttt{var}, \texttt{varexo}, \texttt{varexo\_det}, \texttt{parameter}, \texttt{external\_function}, \texttt{trend\_var}, and \texttt{log\_trend\_var} declarations
     \item using pound sign (\#) constructions in the model block
     \item on the fly during parsing: local variables outside models or unknown functions when an undeclared symbol is encountered
     \end{itemize}
@@ -721,43 +721,59 @@ The class \texttt{ParsingDriver} has the following roles:
 \end{frame}
 
 \begin{frame}
-  \frametitle{Expression trees (1/2)}
+  \frametitle{Expression trees (1/3)}
   \begin{itemize}
   \item The data structure used to store expressions is essentially a \alert{tree}
   \item Graphically, the tree representation of $(1+z)*\log(y)$ is:
     \begin{center}
-      \includegraphics[width=4cm]{expr.png}
+      \includegraphics[width=6cm]{expr.png}
     \end{center}
   \item No need to store parentheses
   \item Each circle represents a \alert{node}
-  \item A node has at most one parent and at most two children
+  \item A non external function node has at most one parent and at most three children (an external function node has as many children as arguments)
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Expression trees (2/2)}
+  \frametitle{Expression trees (2/3)}
   \begin{itemize}
-  \item In Dynare preprocessor, a tree node is a represented by an instance of the abstract class \texttt{ExprNode}
-  \item This class has 5 sub-classes, corresponding to the 5 types of nodes:
+  \item A tree node is represented by an instance of the abstract class \texttt{ExprNode}
+  \item This class has 5 sub-classes, corresponding to the 5 types of non-external-function nodes:
     \begin{itemize}
     \item \texttt{NumConstNode} for constant nodes: contains the identifier of the numerical constants it represents
     \item \texttt{VariableNode} for variable/parameters nodes: contains the identifier of the variable or parameter it represents
-    \item \texttt{UnaryOpNode} for unary operators (\textit{e.g.} unary minus, $\log$, $\sin$): contains an integer representing the operator, and a pointer to its child
-    \item \texttt{BinaryOpNode} for binary operators (\textit{e.g.} $+$, $*$, pow): contains an integer representing the operator, and pointers to its two children
-    \item \texttt{UnknownFunctionNode} for functions unknown to the parser (\textit{e.g.} user defined functions): contains the identifier of the function name, and a vector containing an arbitrary number of children (the function arguments)
+    \item \texttt{UnaryOpNode} for unary operators (\textit{e.g.} unary minus, $\log$, $\sin$): contains an enumerator representing the operator, and a pointer to its child
+    \item \texttt{BinaryOpNode} for binary operators (\textit{e.g.} $+$, $*$, pow): contains an enumerator representing the operator, and pointers to its two children
+    \item \texttt{TrinaryOpNode} for trinary operators (\textit{e.g.} $normcdf$, $normpdf$): contains an enumerator representing the operator and pointers to its three children
     \end{itemize}
   \end{itemize}
 \end{frame}
 
 \begin{frame}
+  \frametitle{Expression trees (3/3)}
+  \begin{itemize}
+  \item The abstract class \texttt{ExprNode} has an abstract sub-class called \texttt{AbstractExternalFunctionNode}
+  \item This abstract sub-class has 3 sub-classes, corresponding to the 3 types of external function nodes:
+    \begin{itemize}
+    \item \texttt{ExternalFunctionNode} for external functions. Contains the identifier of the external function and a vector of its arguments
+    \item \texttt{FirstDerivExternalFunctionNode} for the first derivative of an external function. In addition to the information contained in \texttt{ExternalFunctionNode}, contains the index w.r.t. which this node is the derivative.
+    \item \texttt{SecondDerivExternalFunctionNode} for the second derivative of an external function. In addition to the information contained in \texttt{FirstDerivExternalFunctionNode}, contains the index w.r.t. which this node is the second derivative.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}
   \frametitle{Classes \texttt{DataTree} and \texttt{ModelTree}}
   \begin{itemize}
   \item Class \texttt{DataTree} is a container for storing a set of expression trees
-  \item Class \texttt{ModelTree} is a sub-class of \texttt{DataTree}, specialized for storing a set of model equations (among other things, contains symbolic derivation algorithm)
+  \item Class \texttt{ModelTree} is a sub-class container of \texttt{DataTree}, specialized for storing a set of model equations.
+  \item In the code, we use \texttt{ModelTree}-derived classes: \texttt{DynamicModel} (the model with lags) and \texttt{StaticModel} (the model without lags)
   \item Class \texttt{ModFile} contains:
     \begin{itemize}
-    \item one instance of \texttt{ModelTree} for storing the equations of model block
     \item one instance of \texttt{DataTree} for storing all expressions outside model block
+    \item several instances of \texttt{DynamicModel}, one each for storing the equations of the model block for the original model, modified model, original Ramsey model, the Ramsey FOCs, etc.
+    \item one instance of \texttt{StaticModel} for storing the equations of model block without lags
     \end{itemize}
   \item Expression storage is optimized through three mechanisms:
     \begin{itemize}
@@ -784,7 +800,6 @@ The class \texttt{ParsingDriver} has the following roles:
     \item from \texttt{ParsingDriver} in the semantic actions associated to the parsing of expressions
     \item during symbolic derivation, to create derivatives expressions
     \end{itemize}
-  \item Note that \texttt{NodeID} is an alias (typedef) for \texttt{ExprNode*}
   \end{itemize}
 \end{frame}
 
@@ -817,7 +832,7 @@ The class \texttt{ParsingDriver} has the following roles:
   \item Expressions share a common sub-expression: $1+z$
   \item The internal representation of these expressions is:
     \begin{center}
-      \includegraphics[width=6cm]{expr-sharing.png}
+      \includegraphics[width=7cm]{expr-sharing.png}
     \end{center}
   \end{itemize}
 \end{frame}
@@ -827,14 +842,14 @@ The class \texttt{ParsingDriver} has the following roles:
   \begin{itemize}
   \item Construction methods implement a simple algorithm which achieves maximal expression sharing
   \item Algorithm uses the fact that each node has a unique memory address (pointer to the corresponding instance of \texttt{ExprNode})
-  \item It maintains 5 tables which keep track of the already constructed nodes: one table by type of node (constants, variables, unary ops, binary ops, unknown functions)
+  \item It maintains 5 tables which keep track of the already-constructed nodes: one table by type of node (constants, variables, unary ops, binary ops, trinary opns, external functions, first deriv of external functions, second deriv of external functions, local variables)
   \item Suppose you want to create the node $e_1+e_2$ (where $e_1$ and $e_2$ are sub-expressions):
     \begin{itemize}
     \item the algorithm searches the binary ops table for the tuple equal to (address of $e_1$, address of $e_2$, op code of +) (it is the \alert{search key})
-    \item if the tuple is found in the table, the node already exists, and its memory address is returned
-    \item otherwise, the node is created, and is added to the table with its search key
+    \item if the tuple is found in the table, the node already exists and its memory address is returned
+    \item otherwise, the node is created and is added to the table with its search key
     \end{itemize}
-  \item Maximum sharing is achieved, because expression trees are constructed bottom-up
+  \item Maximum sharing is achieved because expression trees are constructed bottom-up
   \end{itemize}
 \end{frame}
 
@@ -851,7 +866,7 @@ The class \texttt{ParsingDriver} has the following roles:
     \begin{itemize}
     \item class \texttt{DataTree} has attributes containing pointers to one, zero, and minus one constants
     \item these constants are used in many places (in simplification rules, in derivation algorithm...)
-    \item sub-expression sharing algorithm ensures that those constants will never be duplicated
+    \item sub-expression sharing algorithm ensures that these constants will never be duplicated
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -862,7 +877,7 @@ The class \texttt{ParsingDriver} has the following roles:
   \item A statement is represented by an instance of a subclass of the abstract class \texttt{Statement}
   \item Three groups of statements:
     \begin{itemize}
-    \item initialization statements (parameter initialization with $p = \ldots$, \texttt{initval}, \texttt{histval} or \texttt{endval} block)
+    \item initialization statements (parameter initialization with $p = \ldots$, \texttt{initval}, \texttt{histval}, or \texttt{endval} block)
     \item shocks blocks
     \item computing tasks (\texttt{check}, \texttt{simul}, ...)
     \end{itemize}
@@ -877,7 +892,7 @@ The class \texttt{ParsingDriver} has the following roles:
   \begin{itemize}
   \item The \texttt{ModFile} class contains an \alert{evaluation context}
   \item It is a map associating a numerical value to some symbols
-  \item Filled in with \texttt{initval} block, and with parameters initializations
+  \item Filled in with \texttt{initval} block values and parameter initializations
   \item Used during equation normalization (in the block decomposition), for finding non-zero entries in the jacobian
   \end{itemize}
 \end{frame}
@@ -887,34 +902,60 @@ The class \texttt{ParsingDriver} has the following roles:
 \begin{frame}
   \frametitle{Error checking during parsing}
   \begin{itemize}
-  \item Some errors in the \texttt{mod} file can be detected during the parsing:
+  \item Some errors in the \texttt{mod} file can be detected during parsing:
     \begin{itemize}
     \item syntax errors
-    \item use of undeclared symbol in model block, initval block...
+    \item use of undeclared symbols in model block, initval block...
     \item use of a symbol incompatible with its type (\textit{e.g.} parameter in initval, local variable used both in model and outside model)
-    \item multiple shocks declaration for the same variable
+    \item multiple shock declarations for the same variable
     \end{itemize}
-  \item But some other checks can only be done when parsing is completed
+  \item But some other checks can only be done when parsing is completed\ldots
   \end{itemize}
 \end{frame}
 
 \begin{frame}
   \frametitle{Check pass}
   \begin{itemize}
-  \item The check pass is implemented through method \texttt{ModFile::checkPass()}
-  \item Does the following checks:
+  \item The check pass is implemented through the method \texttt{ModFile::checkPass()}
+  \item Performs many checks. Examples include:
     \begin{itemize}
     \item check there is at least one equation in the model (except if doing a standalone BVAR estimation)
-    \item check there is not both a \texttt{simul} and a \texttt{stoch\_simul} (or another command triggering local approximation)
-    \end{itemize}
-  \item Other checks could be added in the future, for example:
-    \begin{itemize}
-    \item check that every endogenous variable is used at least once in current period
-    \item check there is a single \texttt{initval} (or \texttt{histval}, \texttt{endval}) block
-    \item check that \texttt{varobs} is used if there is an estimation
+    \item checks for coherence in statements (\textit{e.g.} options passed to statements do not conflict with each other, required options have been passed)
+    \item checks for coherence among statements (\textit{e.g.} if \texttt{osr} statement is present, ensure \texttt{osr\_params} and \texttt{optim\_weights} statements are present)
+    \item checks for coherence between statements and attributes of \texttt{mod} file (\textit{e.g.} \texttt{use\_dll} is not used with \texttt{block} or \texttt{bytecode})
     \end{itemize}
   \end{itemize}
 \end{frame}
+
+\section{Transform pass}
+
+\begin{frame}
+  \frametitle{Transform pass (1/2)}
+  \begin{itemize}
+  \item The transform pass is implemented through the method \texttt{ModFile::transformPass(bool nostrict)}
+  \item It makes necessary transformations (notably to the dynamic model, symbol table, and statements list) preparing the \texttt{ModFile} object for the computing pass. Examples of transformations include:
+    \begin{itemize}
+    \item creation of auxiliary variables and equations for leads, lags, expectation operator, differentiated forward variables, etc.
+    \item detrending of model equations if nonstationary variables are present
+    \item decreasing leads/lags of predetermined variables by one period
+    \item addition of FOCs of Langrangian for Ramsey problem
+    \item addition of \texttt{dsge\_prior\_weight} initialization before all other statements if estimating a DSGE-VAR where the weight of the DSGE prior of the VAR is calibrated
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Transform pass (2/2)}
+  \begin{itemize}
+  \item It then freezes the symbol table, meaning that no more symbols can be created on the \texttt{ModFile} object
+  \item Finally checks are performed on the transformed model. Examples include:
+    \begin{itemize}
+    \item same number of endogenous varibables as equations (not done in certain situations, \textit{e.g.} Ramsey, discretionary policy, etc.)
+    \item correspondence amongst numbers of variables and statements, \textit{e.g.} Ramsey policy and identification are incompatible with deterministic exogenous variables
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
 
 \section{Computing pass}
 
@@ -922,32 +963,33 @@ The class \texttt{ParsingDriver} has the following roles:
   \frametitle{Overview of the computing pass}
   \begin{itemize}
   \item Computing pass implemented in \texttt{ModFile::computingPass()}
-  \item Begins with a determination of which derivatives to compute
-  \item Then, calls \texttt{ModelTree::computingPass()}, which computes:
+  \item Creates Static model from Dynamic (no leads/lags)
+  \item Determines which derivatives to compute
+  \item Then calls \texttt{DynamicModel::computingPass()} which compute:
     \begin{itemize}
     \item leag/lag variable incidence matrix
-    \item symbolic derivatives
-    \item equation normalization + block decomposition (only in \texttt{sparse\_dll} mode)
+    \item symbolic derivatives w.r.t. endogenous, exogenous, and parameters, if needed
+    \item equation normalization + block decomposition
     \item temporary terms
-    \item symbolic gaussian elimination (only in \texttt{sparse\_dll} mode) \textit{(actually this is done in the output writing pass, but should be moved to the computing pass)}
+    \item computes equation cross references, if desired
     \end{itemize}
+  \item NB: analagous operations for Static model are performed by \texttt{StaticModel::computingPass()}
+  \item Asserts that equations declared linear are indeed linear (by checking that Hessian == 0)
   \item Finally, calls \texttt{Statement::computingPass()} on all statements
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{The variable table}
+  \frametitle{Model Variables}
   \begin{itemize}
-  \item In the context of class \texttt{ModelTree}, a \alert{variable} is a pair (symbol, lead/lag)
-  \item The symbol must correspond to an endogenous or exogenous variable (in the sense of the model)
-  \item The class \texttt{VariableTable} keeps track of those pairs
-  \item An instance of \texttt{ModelTree} contains an instance of \texttt{VariableTable}
-  \item Each pair (\texttt{symbol\_id}, lead/lag) is given a unique \texttt{variable\_id}
-  \item After the computing pass, the class \texttt{VariableTable} writes the leag/lag incidence matrix:
+  \item In the context of class \texttt{ModelTree}, a \alert{variable} is a pair (symbol, lag)
+  \item The symbol must correspond to a variable of type endogenous, exogenous, deterministic exogenous variable, or parameter
+  \item The \texttt{SymbolTable} class keeps track of valid symbols while the \texttt{variable\_node\_map} keeps track of model variables (symbol, lag pairs stored in \texttt{VariableNode} objects)
+  \item After the computing pass, the \texttt{DynamicModel} class writes the leag/lag incidence matrix:
     \begin{itemize}
-    \item endogenous symbols in row
-    \item leads/lags in column
-    \item elements of the matrix are either 0 or correspond to a variable ID, depending on whether the pair (symbol, lead/lag) is used or not in the model
+    \item three rows: the first row indicates $t-1$, the second row $t$, and the third row $t+1$
+    \item one column for every endogenous symbol in order of declaration; NB: includes endogenous auxiliary variables created during the transform pass
+    \item elements of the matrix are either 0 (if the variable does not appear in the model) or correspond to the variable's column in the Jacobian of the dynamic model
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -955,56 +997,49 @@ The class \texttt{ParsingDriver} has the following roles:
 \begin{frame}
   \frametitle{Static versus dynamic model}
   \begin{itemize}
-  \item The static model is simply the (dynamic) model from which the leads/lags have been omitted
+  \item The static model is simply the dynamic model without leads and lags
   \item Static model used to characterize the steady state
   \item The jacobian of the static model is used in the (Matlab) solver for determining the steady state
-  \item No need to derive static and dynamic models independently: \\
-    static derivatives can be easily deduced from dynamic derivatives
   \end{itemize}
   \begin{block}{Example}
     \begin{itemize}
-    \item suppose dynamic model is $2x \cdot x_{-1} = 0$
-    \item static model is $2x^2 = 0$, whose derivative w.r. to $x$ is $4x$
-    \item dynamic derivative w.r. to $x$ is $2x_{-1}$, and w.r. to $x_{-1}$ is $2x$
-    \item removing leads/lags from dynamic derivatives and summing over the two partial derivatives w.r. to $x$ and $x_{-1}$ gives $4x$
+    \item suppose dynamic model is $2x_t \cdot x_{t-1} = 0$
+    \item static model is $2x^2 = 0$, whose derivative w.r.t. $x$ is $4x$
+    \item dynamic derivative w.r.t. $x_t$ is $2x_{t-1}$, and w.r.t. $x_{t-1}$ is $2x_t$
+    \item removing leads/lags from dynamic derivatives and summing over the two partial derivatives w.r.t. $x_t$ and $x_{t-1}$ gives $4x$
     \end{itemize}
   \end{block}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Which derivatives to compute ?}
+  \frametitle{Which derivatives to compute?}
   \begin{itemize}
   \item In deterministic mode:
     \begin{itemize}
-    \item static jacobian (w.r. to endogenous variables only)
-    \item dynamic jacobian (w.r. to endogenous variables only)
+    \item static jacobian w.r.t. endogenous variables only
+    \item dynamic jacobian w.r.t. endogenous variables only
     \end{itemize}
   \item In stochastic mode:
     \begin{itemize}
-    \item static jacobian (w.r. to endogenous variables only)
-    \item dynamic jacobian (w.r. to all variables)
-    \item possibly dynamic hessian (if \texttt{order} option $\geq 2$)
+    \item static jacobian w.r.t. endogenous variables only
+    \item dynamic jacobian w.r.t. endogenous, exogenous, and deterministic exogenous variables
+    \item dynamic hessian w.r.t. endogenous, exogenous, and deterministic exogenous variables
     \item possibly dynamic 3rd derivatives (if \texttt{order} option $\geq 3$)
+    \item possibly dynamic jacobian and/or hessian w.r.t. parameters (if \texttt{identification} or analytic derivs needed for \texttt{estimation} and \texttt{params\_derivs\_order} $>0$)
     \end{itemize}
-  \item For ramsey policy: the same as above, but with one further order of derivation than declared by the user with \texttt{order} option (the derivation order is determined in the check pass, see \texttt{RamseyPolicyStatement::checkPass()})
+  \item For Ramsey policy: the same as above, but with one further order of derivation than declared by the user with \texttt{order} option (the derivation order is determined in the check pass, see \texttt{RamseyPolicyStatement::checkPass()})
   \end{itemize}
 \end{frame}
 
 \begin{frame}
   \frametitle{Derivation algorithm (1/2)}
   \begin{itemize}
-  \item Derivation of the model implemented in \texttt{ModelTree::derive()}
-  \item Simply calls \texttt{ExprNode::getDerivative(varID)} on each equation node
+  \item Derivation of the model implemented in \texttt{ModelTree::computeJacobian()}, \texttt{ModelTree::computeHessian()}, \texttt{ModelTree::computeThirdDerivatives()}, and \texttt{ModelTree::computeParamsDerivatives()}
+  \item Simply call \texttt{ExprNode::getDerivative(deriv\_id)} on each equation node
   \item Use of polymorphism:
     \begin{itemize}
-    \item for a constant or variable node, derivative is straightforward (0 or 1)
-    \item for a unary or binary op node, recursively calls method \texttt{getDerivative()} on children to construct derivative of parent, using usual derivation rules, such as:
-      \begin{itemize}
-      \item $(log(e))' = \frac{e'}{e}$
-      \item $(e_1 + e_2)' = e'_1 + e'_2$
-      \item $(e_1 \cdot e_2)' = e'_1\cdot e_2 + e_1\cdot e'_2$
-      \item $\ldots$
-      \end{itemize}
+    \item for a constant or variable node, derivative is straightforward ($0$ or $1$)
+    \item for a unary, binary, trinary op nodes and external function nodes, recursively calls method \texttt{computeDerivative()} on children to construct derivative
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -1015,18 +1050,17 @@ The class \texttt{ParsingDriver} has the following roles:
   \begin{itemize}
   \item Caching of derivation results
     \begin{itemize}
-    \item method \texttt{ExprNode::getDerivative(varID)} memorizes its result in a member attribute the first time it is called
-    \item so that the second time it is called (with the same argument), simply returns the cached value without recomputation
+    \item method \texttt{ExprNode::getDerivative(deriv\_id)} memorizes its result in a member attribute (\texttt{derivatives}) the first time it is called
+    \item the second time it is called (with the same argument), it simply returns the cached value without recomputation
     \item caching is useful because of sub-expression sharing
     \end{itemize}
-    \pause
-  \item Symbolic \textit{a priori}
+  \item Efficiently finds symbolic derivatives equal to $0$
     \begin{itemize}
     \item consider the expression $x+y^2$
-    \item without any computation, you know its derivative w.r. to $z$ is zero
-    \item each node stores in an attribute the set of variables which appear in the expression it represents ($\{x,y\}$ in the example)
-    \item that set is computed in the constructor (straigthforwardly for a variable or a constant, recursively for other nodes, using the sets of the children)
-    \item when \texttt{getDerivative(varID)} is called, immediately returns zero if \texttt{varID} is not in that set
+    \item without any computation, you know its derivative w.r.t. $z$ is zero
+    \item each node stores in an attribute (\texttt{non\_null\_derivatives}) the set of variables which appear in the expression it represents ($\{x,y\}$ in the example)
+    \item this set is computed in \texttt{prepareForDerivation()}
+    \item when \texttt{getDerivative(deriv\_id)} is called, immediately returns zero if \texttt{deriv\_id} is not in that set
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -1036,8 +1070,8 @@ The class \texttt{ParsingDriver} has the following roles:
   \begin{itemize}
   \item When the preprocessor writes equations and derivatives in its outputs, it takes advantage of sub-expression sharing
   \item In Matlab static and dynamic output files, equations are preceded by a list of \alert{temporary terms}
-  \item Those terms are temporary variables containing expressions shared by several equations or derivatives
-  \item Doing so greatly enhances the computing speed of model residual, jacobian or hessian
+  \item These terms are variables containing expressions shared by several equations or derivatives
+  \item Using these terms greatly enhances the computing speed of the model residual, jacobian, hessian, or third derivative
   \end{itemize}
   \begin{block}{Example}
     \begin{columns}[t]
@@ -1051,9 +1085,9 @@ residual(1)=3*(x+y^2)+1;
       \begin{column}{4.8cm}
         Can be optimized in:
 \begin{verbatim}
-T01=x+y^2;
-residual(0)=T01-z^3;
-residual(1)=3*T01+1;
+T1=x+y^2;
+residual(0)=T1-z^3;
+residual(1)=3*T1+1;
 \end{verbatim}
       \end{column}
     \end{columns}
@@ -1063,8 +1097,7 @@ residual(1)=3*T01+1;
 \begin{frame}
   \frametitle{Temporary terms (2/2)}
   \begin{itemize}
-  \item Expression storage in the preprocessor implements maximal sharing...
-  \item ...but it is not optimal for the Matlab output files, because creating a temporary variable also has a cost (in terms of CPU and of memory)
+  \item Expression storage in the preprocessor implements maximal sharing but this is not optimal for the Matlab output files, because creating a temporary variable also has a cost (in terms of CPU and of memory)
   \item Computation of temporary terms implements a trade-off between:
     \begin{itemize}
     \item cost of duplicating sub-expressions
@@ -1080,7 +1113,7 @@ residual(1)=3*T01+1;
   \begin{itemize}
   \item For most statements, the method \texttt{computingPass()} is a no-op...
   \item ...except for \texttt{planner\_objective} statement, which serves to declare planner objective when doing optimal policy under commitment
-  \item Class \texttt{PlannerObjectiveStatement} contains an instance of \texttt{ModelTree}: used to store the objective (only one equation in the tree)
+  \item Class \texttt{PlannerObjectiveStatement} contains an instance of \texttt{ModelTree}, which stores the objective function (\texttt{i.e.} only one equation in the tree)
   \item During the computing pass, triggers the computation of the first and second order (static) derivatives of the objective
   \end{itemize}
 \end{frame}
@@ -1096,24 +1129,26 @@ residual(1)=3*T01+1;
     \begin{itemize}
     \item general initialization commands
     \item symbol table output (from \texttt{SymbolTable::writeOutput()})
-    \item lead/lag incidence matrix (from \texttt{ModelTree::writeOutput()})
+    \item lead/lag incidence matrix (from \texttt{DynamicModel::writeDynamicMFile()})
     \item call to Matlab functions corresponding to the statements of the \texttt{mod} file (written by calling \texttt{Statement::writeOutput()} on all statements through polymorphism)
     \end{itemize}
   \item Subsidiary output files:
     \begin{itemize}
     \item one for the static model
     \item one for the dynamic model
-    \item and one for the planner objective (if relevant)
-    \item written through \texttt{ModelTree} methods: \texttt{writeStaticFile()} and \texttt{writeDynamicFile()}
+    \item one for the auxiliary variables
+    \item one for the steady state file (if relevant)
+    \item one for the planner objective (if relevant)
     \end{itemize}
   \end{itemize}
 \end{frame}
 
 \begin{frame}
   \frametitle{Model output files}
-  Three possibles modes for \texttt{ModelTree} (see \texttt{mode} attribute):
+  Three possible output types:
   \begin{itemize}
-  \item Standard mode: static and dynamic files in Matlab
+  \item Matlab/Octave mode: static and dynamic files in Matlab
+  \item Julia mode: static and dynamic files in Julia
   \item DLL mode:
     \begin{itemize}
     \item static and dynamic files in C++ source code (with corresponding headers)
@@ -1132,34 +1167,94 @@ residual(1)=3*T01+1;
   \end{itemize}
 \end{frame}
 
-\section{Conclusion}
+\section{Proposed Changes}
 
 \begin{frame}
-  \frametitle{Future work (1/2)}
-  \framesubtitle{Enhancements, optimizations}
+  Things to consider when deciding on changes to make to preprocessor
   \begin{itemize}
-  \item Refactor and reorganize some portions of the code
-  \item Create a testsuite (with unitary tests)
-  \item Separate computation of temporary terms between static and dynamic outputs
-  \item Enhance sub-expression sharing algorithm (using associativity, commutativity and factorization rules)
-  \item Add many checks on the structure of the \texttt{mod} file
+  \item The standard \texttt{mod} file must be supported with all host languages
+  \item The same \texttt{mod} file must produce the same results across host languages
+  \item Potentially want preprocessor to be ``interactive''; allow the user to modify model objects in their platform language and have preprocessor validate modified \texttt{mod} file object and compute derivatives if necessary
+  \item Make it easy to add outputs for currently unsupported languages: Julia (under-supported), Python, Fortran, \ldots
+  \item Should be easy to distribute code across platforms (32- and 64-bit Windows, OS X, GNU/Linux)
+  \item Want to encourage those outside of the project to contribute
+  \item Want it to be easy to maintain so have a preference for a smaller, less complex code base
+  \end{itemize}
+\end{frame}
+
+\newcounter{sauvegardeenumi}
+\newcommand{\asuivre}{\setcounter{sauvegardeenumi}{\theenumi}}
+\newcommand{\suite}{\setcounter{enumi}{\thesauvegardeenumi}}
+
+\begin{frame}
+  \frametitle{Proposed changes with addition of Julia support (1/2)}
+  \begin{enumerate}
+  \item Julia output is provided upon parsing of \texttt{mod} file, everything else done in Julia
+    \begin{itemize}
+    \item Pros: very few changes to the preprocessor
+    \item Cons: repeated code (same checks, transformations, computations done in preprocessor and Julia)
+    \end{itemize}
+  \item Dump preprocessor altogether: do everything with Julia
+    \begin{itemize}
+    \item Pros: simple to distribute, move away from C++ (no contributions, requires more expertise)
+    \item Cons: Matlab/Octave users must also download Julia, a big project, speed (?)
+    \end{itemize}
+    \asuivre
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Proposed changes with addition of Julia support (2/2)}
+  \begin{enumerate}
+    \suite
+  \item Create libraries out of the preprocessor
+    \begin{itemize}
+    \item Pros: Allows Dynare to be used in the same way under Matlab and Julia, don't have to redo preprocessor work
+    \item Cons: difficult for outsiders to contribute
+    \end{itemize}
+  \item Create a markup parser; convert \texttt{mod} files and mod file objects in host languages to markup then run through the whole preprocessor
+    \begin{itemize}
+    \item Pros: Preprocessor used as is, minimal amount of work, incremental step
+    \item Cons: difficult for outsiders to contribute, unnecessary processing when certain changes made in host language
+    \end{itemize}
+  \item Other ideas?
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Transformation of Preprocessor into Library Functions (1/2)}
+  \begin{center}
+    \includegraphics[width=11cm]{library-preprocessor.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Transformation of Preprocessor into Library Functions (2/2)}
+  \begin{itemize}
+  \item NB: The previous slide is a rough sketch
+  \item Need to decide whether we want to allow Dynare to be ``interactive'' only with Julia or also with Matlab/Octave.
+  \item Need to decide on classes that will store processed dynare \texttt{mod} file in Matlab/Octave/Julia
+  \item Need to think about which user changes to a model object require calls to the preprocesser and which parts of the preprocessor need to be called:
+    \begin{itemize}
+    \item Some changes may not require a trip to the preprocessor (\textit{e.g.} modifying the initial value of a parameter so long as variables are typed in Matlab/Octave/Julia classes)
+    \item Other changes may require a complete pass through the preprocessor (\textit{e.g.} modifying planner objective in Ramsey)
+    \item Still other changes may only require visits to parts of the preprocessor (\textit{e.g.} the addition of an \texttt{ms\_estimation} statement would require a visit to \texttt{Parsing} and \texttt{Check Pass}, but not the rest of the preprocessor)
+    \end{itemize}
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Future work (2/2)}
-  \framesubtitle{Features}
-  \begin{itemize}
-  \item Add precompiler macros (\#include, \#define, \#if)
-  \item Add handling for several (sub-)models
-  \item Add indexed variables and control statements (if, loops) both in models and command language
-  \item Add sum, diff, prod operators
-  \item For unknown functions in the model: let user provide a derivative, or trigger numerical derivation
-  \item Generalize binary code output
-  \item Generalize block decomposition ?
-  \end{itemize}
+  \frametitle{Using a Markup parser (1/2)}
+  \begin{center}
+    \includegraphics[width=11cm]{parser-preprocessor.png}
+  \end{center}
 \end{frame}
 
-
+\begin{frame}
+  \frametitle{Using a Markup parser (2/2)}
+  \begin{itemize}
+  \item a
+  \end{itemize}
+\end{frame}
 
 \end{document}
