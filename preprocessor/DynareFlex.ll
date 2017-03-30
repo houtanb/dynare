@@ -57,6 +57,7 @@ string eofbuff;
 %x COMMENT
 %x DYNARE_STATEMENT
 %x DYNARE_BLOCK
+%x DYNARE_MODEL_BLOCK
 %x VERBATIM_BLOCK
 %x NATIVE
 %x NATIVE_COMMENT
@@ -92,13 +93,13 @@ DATE -?[0-9]+([YyAa]|[Mm]([1-9]|1[0-2])|[Qq][1-4]|[Ww]([1-9]{1}|[1-4][0-9]|5[0-2
                 }
 
  /* spaces, tabs and carriage returns are ignored */
-<INITIAL,DYNARE_STATEMENT,DYNARE_BLOCK,COMMENT,DATES_STATEMENT,LINE1,LINE2,LINE3>[ \t\r\f]+  { yylloc->step(); }
-<INITIAL,DYNARE_STATEMENT,DYNARE_BLOCK,COMMENT,DATES_STATEMENT,LINE1,LINE2,LINE3>[\n]+       { yylloc->step(); }
+<INITIAL,DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK,COMMENT,DATES_STATEMENT,LINE1,LINE2,LINE3>[ \t\r\f]+  { yylloc->step(); }
+<INITIAL,DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK,COMMENT,DATES_STATEMENT,LINE1,LINE2,LINE3>[\n]+       { yylloc->step(); }
 
  /* Comments */
-<INITIAL,DYNARE_STATEMENT,DYNARE_BLOCK,DATES_STATEMENT>["%"].*
-<INITIAL,DYNARE_STATEMENT,DYNARE_BLOCK,DATES_STATEMENT>["/"]["/"].*
-<INITIAL,DYNARE_STATEMENT,DYNARE_BLOCK,DATES_STATEMENT>"/*"   {comment_caller = YY_START; BEGIN COMMENT;}
+<INITIAL,DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK,DATES_STATEMENT>["%"].*
+<INITIAL,DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK,DATES_STATEMENT>["/"]["/"].*
+<INITIAL,DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK,DATES_STATEMENT>"/*"   {comment_caller = YY_START; BEGIN COMMENT;}
 
 <COMMENT>"*/"        {BEGIN comment_caller;}
 <COMMENT>.
@@ -183,7 +184,7 @@ DATE -?[0-9]+([YyAa]|[Mm]([1-9]|1[0-2])|[Qq][1-4]|[Ww]([1-9]{1}|[1-4][0-9]|5[0-2
 
 
  /* Begin of a Dynare block */
-<INITIAL>model {BEGIN DYNARE_BLOCK; return token::MODEL;}
+<INITIAL>model {BEGIN DYNARE_MODEL_BLOCK; return token::MODEL;}
 <INITIAL>steady_state_model {BEGIN DYNARE_BLOCK; return token::STEADY_STATE_MODEL;}
 <INITIAL>initval {BEGIN DYNARE_BLOCK; return token::INITVAL;}
 <INITIAL>endval {BEGIN DYNARE_BLOCK; return token::ENDVAL;}
@@ -210,7 +211,7 @@ DATE -?[0-9]+([YyAa]|[Mm]([1-9]|1[0-2])|[Qq][1-4]|[Ww]([1-9]{1}|[1-4][0-9]|5[0-2
 <INITIAL>; {return Dynare::parser::token_type (yytext[0]);}
 
  /* End of a Dynare block */
-<DYNARE_BLOCK>end 	{BEGIN INITIAL; return token::END;}
+<DYNARE_BLOCK,DYNARE_MODEL_BLOCK>end 	{BEGIN INITIAL; return token::END;}
 
 <DYNARE_STATEMENT>subsamples {return token::SUBSAMPLES;}
 <DYNARE_STATEMENT>options {return token::OPTIONS;}
@@ -636,8 +637,8 @@ DATE -?[0-9]+([YyAa]|[Mm]([1-9]|1[0-2])|[Qq][1-4]|[Ww]([1-9]{1}|[1-4][0-9]|5[0-2
 <DYNARE_BLOCK>values {return token::VALUES;}
 <DYNARE_BLOCK>corr {return token::CORR;}
 <DYNARE_BLOCK>periods {return token::PERIODS;}
-<DYNARE_BLOCK>cutoff {return token::CUTOFF;}
-<DYNARE_BLOCK>mfs	{return token::MFS;}
+<DYNARE_MODEL_BLOCK>cutoff {return token::CUTOFF;}
+<DYNARE_MODEL_BLOCK>mfs	{return token::MFS;}
 <DYNARE_BLOCK>gamma_pdf {return token::GAMMA_PDF;}
 <DYNARE_BLOCK>beta_pdf {return token::BETA_PDF;}
 <DYNARE_BLOCK>normal_pdf {return token::NORMAL_PDF;}
@@ -648,8 +649,8 @@ DATE -?[0-9]+([YyAa]|[Mm]([1-9]|1[0-2])|[Qq][1-4]|[Ww]([1-9]{1}|[1-4][0-9]|5[0-2
 <DYNARE_BLOCK>weibull_pdf {return token::WEIBULL_PDF;}
 <DYNARE_BLOCK>dsge_prior_weight {return token::DSGE_PRIOR_WEIGHT;}
 
-<DYNARE_BLOCK>; {return Dynare::parser::token_type (yytext[0]);}
-<DYNARE_BLOCK># {return Dynare::parser::token_type (yytext[0]);}
+<DYNARE_BLOCK,DYNARE_MODEL_BLOCK>; {return Dynare::parser::token_type (yytext[0]);}
+<DYNARE_BLOCK,DYNARE_MODEL_BLOCK># {return Dynare::parser::token_type (yytext[0]);}
 
 <DYNARE_BLOCK>autocorr {return token::AUTOCORR;}
 <DYNARE_BLOCK>restriction {return token::RESTRICTION;}
@@ -716,68 +717,68 @@ DATE -?[0-9]+([YyAa]|[Mm]([1-9]|1[0-2])|[Qq][1-4]|[Ww]([1-9]{1}|[1-4][0-9]|5[0-2
 <DYNARE_STATEMENT>[\\] {return Dynare::parser::token_type (yytext[0]);}
 <DYNARE_STATEMENT>[\'] {return Dynare::parser::token_type (yytext[0]);}
 
-<DYNARE_BLOCK>use_dll {return token::USE_DLL;}
-<DYNARE_BLOCK>block {return token::BLOCK;}
-<DYNARE_BLOCK>bytecode {return token::BYTECODE;}
+<DYNARE_MODEL_BLOCK>use_dll {return token::USE_DLL;}
+<DYNARE_MODEL_BLOCK>block {return token::BLOCK;}
+<DYNARE_MODEL_BLOCK>bytecode {return token::BYTECODE;}
 <DYNARE_BLOCK>all_values_required {return token::ALL_VALUES_REQUIRED;}
-<DYNARE_BLOCK>no_static {return token::NO_STATIC;}
-<DYNARE_BLOCK>differentiate_forward_vars {return token::DIFFERENTIATE_FORWARD_VARS;}
-<DYNARE_BLOCK>parallel_local_files {return token::PARALLEL_LOCAL_FILES;}
+<DYNARE_MODEL_BLOCK>no_static {return token::NO_STATIC;}
+<DYNARE_MODEL_BLOCK>differentiate_forward_vars {return token::DIFFERENTIATE_FORWARD_VARS;}
+<DYNARE_MODEL_BLOCK>parallel_local_files {return token::PARALLEL_LOCAL_FILES;}
 
-<DYNARE_STATEMENT,DYNARE_BLOCK>linear {return token::LINEAR;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>linear {return token::LINEAR;}
 
-<DYNARE_STATEMENT,DYNARE_BLOCK>[,] {return token::COMMA;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>[:] {return Dynare::parser::token_type (yytext[0]);}
-<DYNARE_STATEMENT,DYNARE_BLOCK>[\(\)] {return Dynare::parser::token_type (yytext[0]);}
-<DYNARE_STATEMENT,DYNARE_BLOCK>[\[] {return Dynare::parser::token_type (yytext[0]);}
-<DYNARE_STATEMENT,DYNARE_BLOCK>[\]] {
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[,] {return token::COMMA;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[:] {return Dynare::parser::token_type (yytext[0]);}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[\(\)] {return Dynare::parser::token_type (yytext[0]);}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[\[] {return Dynare::parser::token_type (yytext[0]);}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[\]] {
   if (sigma_e)
     sigma_e = 0;
   return Dynare::parser::token_type (yytext[0]);
 }
-<DYNARE_STATEMENT,DYNARE_BLOCK>[+] {return token::PLUS;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>[-] {return token::MINUS;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>[*] {return token::TIMES;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>[/] {return token::DIVIDE;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>[=] {return token::EQUAL;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>[<] {return token::LESS;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>[>] {return token::GREATER;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>">=" {return token::GREATER_EQUAL;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>"<=" {return token::LESS_EQUAL;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>"==" {return token::EQUAL_EQUAL;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>"!=" {return token::EXCLAMATION_EQUAL;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>[\^] {return token::POWER;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>exp {return token::EXP;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>log {return token::LOG;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>log10 {return token::LOG10;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>ln {return token::LN;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>sin {return token::SIN;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>cos {return token::COS;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>tan {return token::TAN;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>asin {return token::ASIN;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>acos {return token::ACOS;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>atan {return token::ATAN;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>sinh {return token::SINH;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>cosh {return token::COSH;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>tanh {return token::TANH;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>asinh {return token::ASINH;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>acosh {return token::ACOSH;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>atanh {return token::ATANH;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>sqrt {return token::SQRT;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>max {return token::MAX;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>min {return token::MIN;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>abs {return token::ABS;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>sign {return token::SIGN;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>normcdf {return token::NORMCDF;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>normpdf {return token::NORMPDF;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>erf {return token::ERF;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>steady_state {return token::STEADY_STATE;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>expectation {return token::EXPECTATION;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>varobs {return token::VAROBS;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>full {return token::FULL;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>nan {return token::NAN_CONSTANT;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>inf {return token::INF_CONSTANT;}
-<DYNARE_STATEMENT,DYNARE_BLOCK>constants {return token::CONSTANTS;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[+] {return token::PLUS;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[-] {return token::MINUS;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[*] {return token::TIMES;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[/] {return token::DIVIDE;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[=] {return token::EQUAL;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[<] {return token::LESS;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[>] {return token::GREATER;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>">=" {return token::GREATER_EQUAL;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>"<=" {return token::LESS_EQUAL;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>"==" {return token::EQUAL_EQUAL;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>"!=" {return token::EXCLAMATION_EQUAL;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[\^] {return token::POWER;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>exp {return token::EXP;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>log {return token::LOG;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>log10 {return token::LOG10;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>ln {return token::LN;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>sin {return token::SIN;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>cos {return token::COS;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>tan {return token::TAN;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>asin {return token::ASIN;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>acos {return token::ACOS;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>atan {return token::ATAN;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>sinh {return token::SINH;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>cosh {return token::COSH;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>tanh {return token::TANH;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>asinh {return token::ASINH;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>acosh {return token::ACOSH;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>atanh {return token::ATANH;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>sqrt {return token::SQRT;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>max {return token::MAX;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>min {return token::MIN;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>abs {return token::ABS;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>sign {return token::SIGN;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>normcdf {return token::NORMCDF;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>normpdf {return token::NORMPDF;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>erf {return token::ERF;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>steady_state {return token::STEADY_STATE;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>expectation {return token::EXPECTATION;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>varobs {return token::VAROBS;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>full {return token::FULL;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>nan {return token::NAN_CONSTANT;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>inf {return token::INF_CONSTANT;}
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>constants {return token::CONSTANTS;}
 
  /* options for GSA module by Marco Ratto */
 <DYNARE_STATEMENT>identification {return token::IDENTIFICATION;}
@@ -826,17 +827,17 @@ DATE -?[0-9]+([YyAa]|[Mm]([1-9]|1[0-2])|[Qq][1-4]|[Ww]([1-9]{1}|[1-4][0-9]|5[0-2
 <DYNARE_STATEMENT>use_shock_groups {return token::USE_SHOCK_GROUPS;}
 <DYNARE_STATEMENT>colormap {return token::COLORMAP;}
 
-<DYNARE_STATEMENT,DYNARE_BLOCK>[A-Za-z_][A-Za-z0-9_]* {
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[A-Za-z_][A-Za-z0-9_]* {
   yylval->string_val = new string(yytext);
   return token::NAME;
 }
 
-<DYNARE_STATEMENT,DYNARE_BLOCK>((([0-9]*\.[0-9]+)|([0-9]+\.))([edED][-+]?[0-9]+)?)|([0-9]+[edED][-+]?[0-9]+) {
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>((([0-9]*\.[0-9]+)|([0-9]+\.))([edED][-+]?[0-9]+)?)|([0-9]+[edED][-+]?[0-9]+) {
   yylval->string_val = new string(yytext);
   return token::FLOAT_NUMBER;
 }
 
-<DYNARE_STATEMENT,DYNARE_BLOCK>[0-9]+ {
+<DYNARE_STATEMENT,DYNARE_BLOCK,DYNARE_MODEL_BLOCK>[0-9]+ {
   yylval->string_val = new string(yytext);
   return token::INT_NUMBER;
 }
@@ -852,9 +853,9 @@ DATE -?[0-9]+([YyAa]|[Mm]([1-9]|1[0-2])|[Qq][1-4]|[Ww]([1-9]{1}|[1-4][0-9]|5[0-2
                     }
 <DATES_STATEMENT>.  { yylval->string_val->append(yytext); }
 
-<DYNARE_BLOCK>\|[eE] { return token::PIPE_E; }
-<DYNARE_BLOCK>\|[xX] { return token::PIPE_X; }
-<DYNARE_BLOCK>\|[pP] { return token::PIPE_P; }
+<DYNARE_MODEL_BLOCK>\'[eE] { return token::QUOTE_E; }
+<DYNARE_MODEL_BLOCK>\'[xX] { return token::QUOTE_X; }
+<DYNARE_MODEL_BLOCK>\'[pP] { return token::QUOTE_P; }
 
 <DYNARE_STATEMENT,DYNARE_BLOCK>\'[^\']+\' {
   yylval->string_val = new string(yytext + 1);
