@@ -808,7 +808,7 @@ VariableNode::writeOutput(ostream &output, ExprNodeOutputType output_type,
           break;
         case oMatlabOutsideModel:
           assert(lag == 0);
-          output <<  "steady_state_x(" << i << ")";
+          output << "oo_.exo_steady_state(" << i << ")";
           break;
         case oMatlabDynamicSteadyStateOperator:
           output <<  "steady_state_x(" << i << ")";
