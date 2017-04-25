@@ -37,14 +37,14 @@
 
 KordpDynare::KordpDynare(const vector<string> &endo, int num_endo,
                          const vector<string> &exo, int nexog, int npar,
-                         Vector &ysteady, TwoDMatrix &vcov, Vector &inParams, int nstat,
+                         Vector &ysteady, Vector &xsteady, TwoDMatrix &vcov, Vector &inParams, int nstat,
                          int npred, int nforw, int nboth, const int jcols, const Vector &nnzd,
                          const int nsteps, int norder,
                          Journal &jr, DynamicModelAC *dynamicModelFile_arg, double sstol,
                          const vector<int> &var_order, const TwoDMatrix &llincidence, double criterium) throw (TLException) :
   nStat(nstat), nBoth(nboth), nPred(npred), nForw(nforw), nExog(nexog), nPar(npar),
   nYs(npred + nboth), nYss(nboth + nforw), nY(num_endo), nJcols(jcols), NNZD(nnzd), nSteps(nsteps),
-  nOrder(norder), journal(jr), ySteady(ysteady), params(inParams), vCov(vcov),
+  nOrder(norder), journal(jr), ySteady(ysteady), xSteady(xsteady), params(inParams), vCov(vcov),
   md(1), dnl(*this, endo), denl(*this, exo), dsnl(*this, dnl, denl), ss_tol(sstol), varOrder(var_order),
   ll_Incidence(llincidence), qz_criterium(criterium), g1p(NULL),
   g2p(NULL), g3p(NULL), dynamicModelFile(dynamicModelFile_arg)
@@ -58,7 +58,7 @@ KordpDynare::KordpDynare(const vector<string> &endo, int num_endo,
 
 KordpDynare::KordpDynare(const vector<string> &endo, int num_endo,
                          const vector<string> &exo, int nexog, int npar,
-                         Vector &ysteady, TwoDMatrix &vcov, Vector &inParams, int nstat,
+                         Vector &ysteady, Vector &xsteady, TwoDMatrix &vcov, Vector &inParams, int nstat,
                          int npred, int nforw, int nboth, const int jcols, const Vector &nnzd,
                          const int nsteps, int norder,
                          Journal &jr, DynamicModelAC *dynamicModelFile_arg, double sstol,
@@ -66,7 +66,7 @@ KordpDynare::KordpDynare(const vector<string> &endo, int num_endo,
                          TwoDMatrix *g1_arg, TwoDMatrix *g2_arg, TwoDMatrix *g3_arg) throw (TLException) :
   nStat(nstat), nBoth(nboth), nPred(npred), nForw(nforw), nExog(nexog), nPar(npar),
   nYs(npred + nboth), nYss(nboth + nforw), nY(num_endo), nJcols(jcols), NNZD(nnzd), nSteps(nsteps),
-  nOrder(norder), journal(jr), ySteady(ysteady), params(inParams), vCov(vcov),
+  nOrder(norder), journal(jr), ySteady(ysteady), xSteady(xsteady), params(inParams), vCov(vcov),
   md(1), dnl(*this, endo), denl(*this, exo), dsnl(*this, dnl, denl), ss_tol(sstol), varOrder(var_order),
   ll_Incidence(llincidence), qz_criterium(criterium),
   g1p(g1_arg), g2p(g2_arg), g3p(g3_arg), dynamicModelFile(dynamicModelFile_arg)
@@ -138,7 +138,7 @@ KordpDynare::calcDerivativesAtSteady()
       Vector llxSteady(nJcols-nExog);
       LLxSteady(ySteady, llxSteady);
 
-      dynamicModelFile->eval(llxSteady, xx, params, ySteady, out, g1p, g2p, g3p);
+      dynamicModelFile->eval(llxSteady, xx, params, ySteady, xSteady, out, g1p, g2p, g3p);
 
     }
 

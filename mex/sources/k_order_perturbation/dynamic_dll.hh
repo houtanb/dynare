@@ -35,8 +35,9 @@
 #include "dynare_exception.h"
 
 // <model>_Dynamic DLL pointer
+
 typedef void (*DynamicDLLFn)(const double *y, const double *x, int nb_row_x, const double *params, const double *steady_state,
-                             int it_, double *residual, double *g1, double *g2, double *g3);
+                             const double *steady_state_x, int it_, double *residual, double *g1, double *g2, double *g3);
 
 /**
  * creates pointer to Dynamic function inside <model>_dynamic.dll
@@ -58,7 +59,7 @@ public:
   virtual
   ~DynamicModelDLL();
 
-  void eval(const Vector &y, const Vector &x, const Vector &params, const Vector &ySteady,
+  void eval(const Vector &y, const Vector &x, const Vector &params, const Vector &ySteady, const Vector &xSteady,
             Vector &residual, TwoDMatrix *g1, TwoDMatrix *g2, TwoDMatrix *g3) throw (DynareException);
 };
 #endif

@@ -24,6 +24,7 @@
   1) dr
   2) M_
   3) options
+  4) oo_
 
   Outputs:
   - if order == 1: only g_1
@@ -85,6 +86,7 @@ extern "C" {
     const mxArray *dr = prhs[0];
     const mxArray *M_ = prhs[1];
     const mxArray *options_ = prhs[2];
+    const mxArray *oo_ = prhs[3];
     int use_dll = (int) mxGetScalar(mxGetField(options_, 0, "use_dll"));
 
     mxArray *mFname = mxGetField(M_, 0, "fname");
@@ -130,6 +132,13 @@ extern "C" {
     Vector ySteady(dparams, nSteady);
     if (!ySteady.isFinite())
       DYN_MEX_FUNC_ERR_MSG_TXT("The steady state vector contains NaN or Inf");
+
+    mxFldp = mxGetField(oo_, 0, "exo_steady_state");
+    dparams = mxGetPr(mxFldp);
+    const int nxSteady = (int) mxGetM(mxFldp);
+    Vector xSteady(dparams, nxSteady);
+    if (!xSteady.isFinite())
+      DYN_MEX_FUNC_ERR_MSG_TXT("The exogenous steady state vector contains NaN or Inf");
 
     mxFldp = mxGetField(M_, 0, "nstatic");
     const int nStat = (int) mxGetScalar(mxFldp);
@@ -247,7 +256,7 @@ extern "C" {
 
         // make KordpDynare object
         KordpDynare dynare(endoNames, nEndo, exoNames, nExog, nPar,
-                           ySteady, vCov, modParams, nStat, nPred, nForw, nBoth,
+                           ySteady, xSteady, vCov, modParams, nStat, nPred, nForw, nBoth,
                            jcols, NNZD, nSteps, kOrder, journal, dynamicModelFile,
                            sstol, var_order_vp, llincidence, qz_criterium,
                            g1m, g2m, g3m);

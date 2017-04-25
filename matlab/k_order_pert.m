@@ -1,4 +1,4 @@
-function [dr,info] = k_order_pert(dr,M,options)
+function [dr,info] = k_order_pert(dr,M,options,oo)
 % Compute decision rules using the k-order DLL from Dynare++
 
 % Copyright (C) 2009-2017 Dynare Team
@@ -37,14 +37,14 @@ end
 
 switch(order)
   case 1
-    [err, g_1] = k_order_perturbation(dr,M,options);
+    [err, g_1] = k_order_perturbation(dr,M,options,oo);
     if err
         info(1)=9;
         return
     end
     dr.g_1 = g_1;
   case 2
-    [err, g_0, g_1, g_2] = k_order_perturbation(dr,M,options);
+    [err, g_0, g_1, g_2] = k_order_perturbation(dr,M,options,oo);
     if err
         info(1)=9;
         return
@@ -55,14 +55,14 @@ switch(order)
   case 3
     if options.pruning
         [err, g_0, g_1, g_2, g_3, derivs] = k_order_perturbation(dr, ...
-                                                          M,options);
+                                                          M,options,oo);
         if err
             info(1)=9;
             return
         end
     else
         [err, g_0, g_1, g_2, g_3] = k_order_perturbation(dr, ...
-                                                         M,options);
+                                                         M,options,oo);
         if err
             info(1)=9;
             return

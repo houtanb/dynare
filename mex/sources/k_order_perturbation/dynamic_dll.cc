@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 Dynare Team
+ * Copyright (C) 2008-2017 Dynare Team
  *
  * This file is part of Dynare.
  *
@@ -87,9 +87,9 @@ DynamicModelDLL::~DynamicModelDLL()
 }
 
 void
-DynamicModelDLL::eval(const Vector &y, const Vector &x, const Vector &modParams, const Vector &ySteady,
+DynamicModelDLL::eval(const Vector &y, const Vector &x, const Vector &modParams, const Vector &ySteady, const Vector &xSteady,
                       Vector &residual, TwoDMatrix *g1, TwoDMatrix *g2, TwoDMatrix *g3) throw (DynareException)
 {
-  Dynamic(y.base(), x.base(), 1, modParams.base(), ySteady.base(), 0, residual.base(), g1->base(),
+  Dynamic(y.base(), x.base(), 1, modParams.base(), ySteady.base(), xSteady.base(), 0, residual.base(), g1->base(),
           g2 == NULL ? NULL : g2->base(), g3 == NULL ? NULL : g3->base());
 }

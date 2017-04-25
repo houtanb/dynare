@@ -1,10 +1,11 @@
-% [err, g_0, g_1, g_2, g_3, derivs] = k_order_perturbation(dr,DynareModel,DynareOptions)
+% [err, g_0, g_1, g_2, g_3, derivs] = k_order_perturbation(dr,DynareModel,DynareOptions,DynareOutput)
 % computes a k_order_petrubation solution for k=1,2,3
 %
 % INPUTS
 % dr:            struct   describing the reduced form solution of the model.
 % DynareModel:   struct   jobs's parameters
 % DynareOptions: struct   job's options
+% DynareOutput:  struct   dynare's output structure
 %
 % OUTPUTS
 % err:           double   err code (currently unused)

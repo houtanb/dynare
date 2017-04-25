@@ -103,6 +103,7 @@ class KordpDynare : public DynamicModel
   const int nOrder;
   Journal &journal;
   Vector &ySteady;
+  Vector &xSteady;
   Vector &params;
   TwoDMatrix &vCov;
   TensorContainer<FSSparseTensor> md; // ModelDerivatives
@@ -120,7 +121,7 @@ class KordpDynare : public DynamicModel
 public:
   KordpDynare(const vector<string> &endo, int num_endo,
               const vector<string> &exo, int num_exo, int num_par,
-              Vector &ySteady, TwoDMatrix &vCov, Vector &params, int nstat, int nPred,
+              Vector &ySteady, Vector &xSteady, TwoDMatrix &vCov, Vector &params, int nstat, int nPred,
               int nforw, int nboth, const int nJcols, const Vector &NNZD,
               const int nSteps, const int ord,
               Journal &jr, DynamicModelAC *dynamicModelFile_arg, double sstol,
@@ -128,7 +129,7 @@ public:
               double qz_criterium) throw (TLException);
   KordpDynare(const vector<string> &endo, int num_endo,
               const vector<string> &exo, int num_exo, int num_par,
-              Vector &ySteady, TwoDMatrix &vCov, Vector &params, int nstat, int nPred,
+              Vector &ySteady, Vector &xSteady, TwoDMatrix &vCov, Vector &params, int nstat, int nPred,
               int nforw, int nboth, const int nJcols, const Vector &NNZD,
               const int nSteps, const int ord,
               Journal &jr, DynamicModelAC *dynamicModelFile_arg, double sstol,
