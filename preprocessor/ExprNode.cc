@@ -813,6 +813,9 @@ VariableNode::writeOutput(ostream &output, ExprNodeOutputType output_type,
         case oMatlabDynamicSteadyStateOperator:
           output <<  "steady_state_x(" << i << ")";
           break;
+        case oCDynamicSteadyStateOperator:
+          output << "steady_state_x[" << i << "]";
+          break;
         case oJuliaSteadyStateFile:
         case oSteadyStateFile:
           output << "exo_" << LEFT_ARRAY_SUBSCRIPT(output_type) << i << RIGHT_ARRAY_SUBSCRIPT(output_type);

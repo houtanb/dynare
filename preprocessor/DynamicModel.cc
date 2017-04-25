@@ -1655,10 +1655,10 @@ DynamicModel::writeDynamicCFile(const string &dynamic_basename, const int order)
                   << endl
                   << " */" << endl << endl
                   << "#include \"mex.h\"" << endl << endl
-                  << "void Dynamic(double *y, double *x, int nb_row_x, double *params, double *steady_state, int it_, double *residual, double *g1, double *v2, double *v3);" << endl
+                  << "void Dynamic(double *y, double *x, int nb_row_x, double *params, double *steady_state, double *steady_state_x, int it_, double *residual, double *g1, double *v2, double *v3);" << endl
                   << "void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])" << endl
                   << "{" << endl
-                  << "  double *y, *x, *params, *steady_state;" << endl
+                  << "  double *y, *x, *params, *steady_state, *steady_state_x;" << endl
                   << "  double *residual, *g1, *v2, *v3;" << endl
                   << "  int nb_row_x, it_;" << endl
                   << endl
@@ -1677,8 +1677,11 @@ DynamicModel::writeDynamicCFile(const string &dynamic_basename, const int order)
                   << "  /* Create a pointer to the input matrix steady_state. */" << endl
                   << "  steady_state = mxGetPr(prhs[3]);" << endl
                   << endl
+                  << "  /* Create a pointer to the input matrix steady_state_x. */" << endl
+                  << "  steady_state_x = mxGetPr(prhs[4]);" << endl
+                  << endl
                   << "  /* Fetch time index */" << endl
-                  << "  it_ = (int) mxGetScalar(prhs[4]) - 1;" << endl
+                  << "  it_ = (int) mxGetScalar(prhs[5]) - 1;" << endl
                   << endl
                   << "  /* Gets number of rows of matrix x. */" << endl
                   << "  nb_row_x = mxGetM(prhs[1]);" << endl
@@ -1719,7 +1722,7 @@ DynamicModel::writeDynamicCFile(const string &dynamic_basename, const int order)
                   << "  }" << endl
                   << endl
                   << "  /* Call the C subroutines. */" << endl
-                  << "  Dynamic(y, x, nb_row_x, params, steady_state, it_, residual, g1, v2, v3);" << endl
+                  << "  Dynamic(y, x, nb_row_x, params, steady_state, steady_state_x, it_, residual, g1, v2, v3);" << endl
                   << "}" << endl;
   mDynamicMexFile.close();
 }
@@ -2412,7 +2415,7 @@ DynamicModel::writeDynamicModel(ostream &DynamicOutput, bool use_dll, bool julia
     }
   else if (output_type == oCDynamicModel)
     {
-      DynamicOutput << "void Dynamic(double *y, double *x, int nb_row_x, double *params, double *steady_state, int it_, double *residual, double *g1, double *v2, double *v3)" << endl
+      DynamicOutput << "void Dynamic(double *y, double *x, int nb_row_x, double *params, double *steady_state, double *steady_state_x, int it_, double *residual, double *g1, double *v2, double *v3)" << endl
                     << "{" << endl
                     << "  double lhs, rhs;" << endl
                     << endl
