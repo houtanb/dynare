@@ -32,7 +32,7 @@ function process(modfile::String)
 end
 
 function run_preprocessor(modfile::String)
-    dynare_m = "/Users/houtanb/dynare_unstable/preprocessor/dynare_m"
+    dynare_m = "/Users/houtanb/Documents/DYNARE/julia/dynare/preprocessor/dynare_m"
     run(`$dynare_m $modfile.mod json=transform onlyjson`)
 
     jsonfile = "$modfile.json"
