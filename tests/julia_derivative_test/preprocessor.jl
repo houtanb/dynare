@@ -221,6 +221,22 @@ function tostatic(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag::Dict{Any,Any
     end
 end
 
+function varidx(model, name)
+    idx = 1
+    for endog in model["endogenous"]
+        if endog.name == name
+            return idx
+        end
+        idx += 1
+    end
+    for exog in model["exogenous"]
+        if exog.name == name
+            return idx
+        end
+        idx += 1
+    end
+end
+
 function subLeadLagsInEqutaions(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag_subs::Dict{Any, String}, dict_lead_lag::Dict{Any,Any})
     for de in dict_lead_lag
         var = de[1][1]
@@ -234,14 +250,26 @@ function subLeadLagsInEqutaions(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag
 end
 
 function compose_derivatives(model)
-    (static, dynamic) = (Array{Expr, 1}(), Array{Expr, 1}())
 
-    # declare symengine vars
-#    diff(SymEngine.Basic("x^2*y"), SymEngine.symbols("x"))
-
-    for i in model["dynamic_xrefs"]
-        i
+    # Static Jacobian
+    I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
+    for i in model["endogenous"]
+        eqs = model["static_xrefs"][i.name]
+        for eq in eqs
+            deriv = SymEngine.diff(model["static"][eq], SymEngine.symbols(i.name))
+            if deriv != 0
+                I = [I; eq]
+                J = [J; varidx(model, i.name)]
+                V = [V; deriv]
+            end
+        end
     end
+    static = sparse(I, J, V)
+
+    # Dynamic Jacobian
+    I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
+    
+    dynamic = sparse(I, J, V)
 
     (static, dynamic)
 end
