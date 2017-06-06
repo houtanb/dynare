@@ -15,6 +15,8 @@ function process(modfile::String)
      model["dynamic"],
      model["static"],
      model["dynamic_sub"],
+     model["dynamic_xrefs"],
+     model["static_xrefs"],
      model["dict_lead_lag"],
      model["dict_lead_lag_subs"],
      model["param_init"],
@@ -29,6 +31,8 @@ function process(modfile::String)
            model["dynamic"],
            model["static"],
            model["dynamic_sub"],
+           model["dynamic_xrefs"],
+           model["static_xrefs"],
            model["dict_lead_lag"],
            model["dict_lead_lag_subs"],
            model["param_init"],
@@ -114,6 +118,18 @@ function get_numerical_initialization(d::OrderedDict{Symbol,Number}, a::Array{An
     end
 end
 
+function get_all_endog_xrefs(dict::Dict{Any, Any}, a::Array{Any,1})
+    for i in a
+        dict[(i["endogenous"], i["shift"])] = round(Int, i["equations"])
+    end
+end
+
+function get_all_exog_xrefs(dict::Dict{Any, Any}, a::Array{Any,1})
+    for i in a
+        dict[(i["exogenous"], i["shift"])] = round(Int, i["equations"])
+    end
+end
+
 function get_endog_xrefs(dict::Dict{Any, Any}, a::Array{Any,1})
     for i in a
         if i["shift"] != 0
@@ -144,7 +160,9 @@ function parse_json(json_model::Dict{String,Any})
     get_vars(exogenous, json_model["exogenous"])
     get_vars(exogenous_deterministic, json_model["exogenous_deterministic"])
 
+    #
     # Model Equations
+    #
     equations, dynamic = Array{Expr,1}(), Array{SymEngine.Basic, 1}()
     for e in json_model["model"]
         push!(equations, parse_eq(e))
@@ -153,15 +171,32 @@ function parse_json(json_model::Dict{String,Any})
         push!(dynamic, SymEngine.Basic(e))
     end
 
+    # Cross References
+    dynamic_xrefs, static_xrefs = Dict(), Dict()
+    get_all_exog_xrefs(dynamic_xrefs, json_model["xrefs"]["exogenous"])
+    get_all_endog_xrefs(dynamic_xrefs, json_model["xrefs"]["endogenous"])
+
     dict_lead_lag = Dict()
-    get_exog_xrefs(dict_lead_lag, json_model["xrefs"]["exogenous"])
-    get_endog_xrefs(dict_lead_lag, json_model["xrefs"]["endogenous"])
+    for i in dynamic_xrefs
+        if i[1][2] != 0
+            dict_lead_lag[i[1]] = i[2]
+        end
+        if haskey(static_xrefs, i[1][1])
+            static_xrefs[i[1][1]] = union(static_xrefs[i[1][1]], i[2])
+        else
+            static_xrefs[i[1][1]] = i[2]
+        end
+    end
     static, dynamic_sub = dynamic, dynamic
+    tostatic(static, dict_lead_lag)
+    # Substitute symbols for lead and lagged variables
+    # Can drop this part once SymEngine has implemented derivatives of functions. See https://github.com/symengine/SymEngine.jl/issues/53
     dict_lead_lag_subs = Dict{Any, String}()
     subLeadLagsInEqutaions(dynamic_sub, dict_lead_lag_subs, dict_lead_lag)
-    tostatic(static, dict_lead_lag)
 
+    #
     # Statements
+    #
     # Param Init
     param_init = OrderedDict{Symbol,Number}()
     get_param_inits(param_init, json_model["statements"])
@@ -174,10 +209,8 @@ function parse_json(json_model::Dict{String,Any})
     end_val = OrderedDict{Symbol,Number}()
     get_numerical_initialization(end_val, json_model["statements"], "end_val")
 
-    # Cross References
-
     # Return
-    (parameters, endogenous, exogenous, exogenous_deterministic, equations, dynamic, static, dynamic_sub, dict_lead_lag, dict_lead_lag_subs, param_init, init_val, end_val)
+    (parameters, endogenous, exogenous, exogenous_deterministic, equations, dynamic, static, dynamic_sub, dynamic_xrefs, static_xrefs, dict_lead_lag, dict_lead_lag_subs, param_init, init_val, end_val)
 end
 
 function tostatic(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag::Dict{Any,Any})
@@ -206,10 +239,9 @@ function compose_derivatives(model)
     # declare symengine vars
 #    diff(SymEngine.Basic("x^2*y"), SymEngine.symbols("x"))
 
-    # Substitute symbols for lead and lagged variables
-    # Can drop this part once SymEngine has implemented derivatives of functions. See https://github.com/symengine/SymEngine.jl/issues/53
-    #
-    # SymEngine.subs(SymEngine.Basic("y*x(1)^3"), SymEngine.Basic("x(1)"), SymEngine.symbols("newvar"))
+    for i in model["dynamic_xrefs"]
+        i
+    end
 
     (static, dynamic)
 end
