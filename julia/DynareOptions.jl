@@ -36,7 +36,7 @@ function pfmsolver_set_defaults()
 end
 
 type Options
-    dynare_version::String
+    dynare_version::ASCIIString
     linear::Bool
     pfmsolver::PFMSolver
 end

@@ -1,6 +1,6 @@
 module DynareModel
 ##
- # Copyright (C) 2015 Dynare Team
+ # Copyright (C) 2015-2017 Dynare Team
  #
  # This file is part of Dynare.
  #
@@ -18,7 +18,7 @@ module DynareModel
  # along with Dynare.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-export Model, Endo, Exo, ExoDet, Param, dynare_model
+export Model, dynare_model
 
 abstract Atom
 
@@ -123,6 +123,7 @@ type Model
     static_params_derivs::Function
     dynamic::Function
     dynamic_params_derivs::Function
+    first_derivatives::Function
     steady_state::Function
 end
 
@@ -172,6 +173,7 @@ function dynare_model()
                  function()end,         # static_params_derivs
                  function()end,         # dynamic
                  function()end,         # dynamic_params_derivs
+                 function()end,         # first_derivatives
                  function()end          # steady_state
                 )
 end

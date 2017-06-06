@@ -21,7 +21,7 @@ module DynareOutput
 export Ouput, dynare_output
 
 type Output
-    dynare_version::String
+    dynare_version::ASCIIString
     steady_state::Vector{Float64}
     exo_steady_state::Vector{Float64}
 end
