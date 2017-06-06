@@ -1,4 +1,4 @@
-push!(LOAD_PATH, "/Users/houtanb/dynare_unstable/tests/julia_derivative_test/v0.5")
+push!(LOAD_PATH, "/Users/houtanb/Documents/DYNARE/julia/dynare/julia")
 
 using DataStructures
 

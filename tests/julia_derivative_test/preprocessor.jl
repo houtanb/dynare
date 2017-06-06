@@ -12,6 +12,11 @@ function process(modfile::String)
      model["exogenous"],
      model["exogenous_deterministic"],
      model["equations"],
+     model["dynamic"],
+     model["static"],
+     model["dynamic_sub"],
+     model["dict_lead_lag"],
+     model["dict_lead_lag_subs"],
      model["param_init"],
      model["init_val"],
      model["end_val"]) = parse_json(json)
@@ -21,10 +26,16 @@ function process(modfile::String)
            model["exogenous"],
            model["exogenous_deterministic"],
            model["equations"],
+           model["dynamic"],
+           model["static"],
+           model["dynamic_sub"],
+           model["dict_lead_lag"],
+           model["dict_lead_lag_subs"],
            model["param_init"],
            model["init_val"],
            model["end_val"]) = parse_json(json)
 
+    # Calculate derivatives
     (static, dynamic) = compose_derivatives(model)
 
     # Return JSON and Julia representation of modfile
@@ -71,6 +82,12 @@ function get_vars(d::Array{DynareModel.ExoDet,1}, a::Array{Any,1})
     end
 end
 
+#@generated function get_vars(d, a)
+#    for i in a
+#        push!()
+#    end
+#end
+
 function parse_eq(eq::Dict{String,Any})
     if eq["rhs"] == "0"
         return parse(eq["lhs"])
@@ -97,6 +114,22 @@ function get_numerical_initialization(d::OrderedDict{Symbol,Number}, a::Array{An
     end
 end
 
+function get_endog_xrefs(dict::Dict{Any, Any}, a::Array{Any,1})
+    for i in a
+        if i["shift"] != 0
+            dict[(i["endogenous"], i["shift"])] = round(Int, i["equations"])
+        end
+    end
+end
+
+function get_exog_xrefs(dict::Dict{Any, Any}, a::Array{Any,1})
+    for i in a
+        if i["shift"] != 0
+            dict[(i["exogenous"], i["shift"])] = round(Int, i["equations"])
+        end
+    end
+end
+
 function parse_json(json_model::Dict{String,Any})
     # Model variables, parameters
 #    MUCH SLOWER THIS WAY
@@ -112,10 +145,21 @@ function parse_json(json_model::Dict{String,Any})
     get_vars(exogenous_deterministic, json_model["exogenous_deterministic"])
 
     # Model Equations
-    equations = Array{Expr,1}()
+    equations, dynamic = Array{Expr,1}(), Array{SymEngine.Basic, 1}()
     for e in json_model["model"]
         push!(equations, parse_eq(e))
     end
+    for e in equations
+        push!(dynamic, SymEngine.Basic(e))
+    end
+
+    dict_lead_lag = Dict()
+    get_exog_xrefs(dict_lead_lag, json_model["xrefs"]["exogenous"])
+    get_endog_xrefs(dict_lead_lag, json_model["xrefs"]["endogenous"])
+    static, dynamic_sub = dynamic, dynamic
+    dict_lead_lag_subs = Dict{Any, String}()
+    subLeadLagsInEqutaions(dynamic_sub, dict_lead_lag_subs, dict_lead_lag)
+    tostatic(static, dict_lead_lag)
 
     # Statements
     # Param Init
@@ -133,13 +177,39 @@ function parse_json(json_model::Dict{String,Any})
     # Cross References
 
     # Return
-    (parameters, endogenous, exogenous, exogenous_deterministic, equations, param_init, init_val, end_val)
+    (parameters, endogenous, exogenous, exogenous_deterministic, equations, dynamic, static, dynamic_sub, dict_lead_lag, dict_lead_lag_subs, param_init, init_val, end_val)
+end
+
+function tostatic(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag::Dict{Any,Any})
+    for de in dict_lead_lag
+        for i in de[2]
+            subeqs[i] = SymEngine.subs(subeqs[i], SymEngine.Basic(string(de[1][1], "(", de[1][2], ")")), SymEngine.symbols(de[1][1]))
+        end
+    end
+end
+
+function subLeadLagsInEqutaions(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag_subs::Dict{Any, String}, dict_lead_lag::Dict{Any,Any})
+    for de in dict_lead_lag
+        var = de[1][1]
+        lag = de[1][2]
+        subvar = string("__lead_lag_subvar__", var, lag < 0 ? string("m", abs(lag)) : lag)
+        dict_lead_lag_subs[de[1]] = subvar
+        for i in de[2]
+            subeqs[i] = SymEngine.subs(subeqs[i], SymEngine.Basic(string(var, "(", lag, ")")), SymEngine.symbols(subvar))
+        end
+    end
 end
 
 function compose_derivatives(model)
     (static, dynamic) = (Array{Expr, 1}(), Array{Expr, 1}())
 
-    
+    # declare symengine vars
+#    diff(SymEngine.Basic("x^2*y"), SymEngine.symbols("x"))
+
+    # Substitute symbols for lead and lagged variables
+    # Can drop this part once SymEngine has implemented derivatives of functions. See https://github.com/symengine/SymEngine.jl/issues/53
+    #
+    # SymEngine.subs(SymEngine.Basic("y*x(1)^3"), SymEngine.Basic("x(1)"), SymEngine.symbols("newvar"))
 
     (static, dynamic)
 end
