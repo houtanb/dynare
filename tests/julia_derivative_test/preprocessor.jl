@@ -35,8 +35,7 @@ function run_preprocessor(modfile::String)
     dynare_m = "/Users/houtanb/Documents/DYNARE/julia/dynare/preprocessor/dynare_m"
     run(`$dynare_m $modfile.mod json=transform onlyjson`)
 
-    jsonfile = "$modfile.json"
-    json = open(jsonfile)
+    json = open("$modfile.json")
     modfile = JSON.parse(readstring(json))
     close(json)
     return modfile
