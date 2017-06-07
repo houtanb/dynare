@@ -15,7 +15,8 @@ function process(modfile::String)
      model["dynamic"],
      model["static"],
      model["dynamic_sub"],
-     model["dynamic_xrefs"],
+     model["dynamic_endog_xrefs"],
+     model["dynamic_exog_xrefs"],
      model["static_xrefs"],
      model["dict_lead_lag"],
      model["dict_lead_lag_subs"],
@@ -31,7 +32,8 @@ function process(modfile::String)
            model["dynamic"],
            model["static"],
            model["dynamic_sub"],
-           model["dynamic_xrefs"],
+           model["dynamic_endog_xrefs"],
+           model["dynamic_exog_xrefs"],
            model["static_xrefs"],
            model["dict_lead_lag"],
            model["dict_lead_lag_subs"],
@@ -44,6 +46,7 @@ function process(modfile::String)
 
     # Return JSON and Julia representation of modfile
     (json, model, staticg1, staticg2, dynamic)
+    #(json, model)
 end
 
 function run_preprocessor(modfile::String)
@@ -118,16 +121,40 @@ function get_numerical_initialization(d::OrderedDict{Symbol,Number}, a::Array{An
     end
 end
 
-function get_all_endog_xrefs(dict::Dict{Any, Any}, a::Array{Any,1})
+function get_all_endog_xrefs(a::Array{Any,1})
+    lag = OrderedDict{Any, Array{Int}}()
+    t = OrderedDict{Any, Array{Int}}()
+    lead = OrderedDict{Any, Array{Int}}()
     for i in a
-        dict[(i["endogenous"], i["shift"])] = round(Int, i["equations"])
+        if i["shift"] == -1
+            lag[(i["endogenous"], -1)] = round(Int, i["equations"])
+        elseif i["shift"] == 0
+            t[(i["endogenous"], 0)] = round(Int, i["equations"])
+        elseif i["shift"] == 1
+            lead[(i["endogenous"], 1)] = round(Int, i["equations"])
+        else
+            @assert false
+        end
     end
+    merge(lag, t, lead)
 end
 
-function get_all_exog_xrefs(dict::Dict{Any, Any}, a::Array{Any,1})
+function get_all_exog_xrefs(a::Array{Any,1})
+    lag = OrderedDict{Any, Array{Int}}()
+    t = OrderedDict{Any, Array{Int}}()
+    lead = OrderedDict{Any, Array{Int}}()
     for i in a
-        dict[(i["exogenous"], i["shift"])] = round(Int, i["equations"])
+        if i["shift"] == -1
+            lag[(i["exogenous"], -1)] = round(Int, i["equations"])
+        elseif i["shift"] == 0
+            t[(i["exogenous"], 0)] = round(Int, i["equations"])
+        elseif i["shift"] == 1
+            lead[(i["exogenous"], 1)] = round(Int, i["equations"])
+        else
+            @assert false
+        end
     end
+    merge(lag, t, lead)
 end
 
 function get_endog_xrefs(dict::Dict{Any, Any}, a::Array{Any,1})
@@ -172,21 +199,19 @@ function parse_json(json_model::Dict{String,Any})
     end
 
     # Cross References
-    dynamic_xrefs, static_xrefs = Dict(), Dict()
-    get_all_exog_xrefs(dynamic_xrefs, json_model["xrefs"]["exogenous"])
-    get_all_endog_xrefs(dynamic_xrefs, json_model["xrefs"]["endogenous"])
+    dynamic_exog_xrefs = get_all_exog_xrefs(json_model["xrefs"]["exogenous"])
+    dynamic_endog_xrefs = get_all_endog_xrefs(json_model["xrefs"]["endogenous"])
 
     dict_lead_lag = Dict()
-    for i in dynamic_xrefs
+    static_xrefs = OrderedDict{Any, Array{Int}}()
+    for i in dynamic_endog_xrefs
         if i[1][2] != 0
             dict_lead_lag[i[1]] = i[2]
         end
-        if is_var_type(endogenous, i[1][1])
-            if haskey(static_xrefs, i[1][1])
-                static_xrefs[i[1][1]] = union(static_xrefs[i[1][1]], i[2])
-            else
-                static_xrefs[i[1][1]] = i[2]
-            end
+        if haskey(static_xrefs, i[1][1])
+            static_xrefs[i[1][1]] = union(static_xrefs[i[1][1]], i[2])
+        else
+            static_xrefs[i[1][1]] = i[2]
         end
     end
     static, dynamic_sub = dynamic, dynamic
@@ -212,7 +237,7 @@ function parse_json(json_model::Dict{String,Any})
     get_numerical_initialization(end_val, json_model["statements"], "end_val")
 
     # Return
-    (parameters, endogenous, exogenous, exogenous_deterministic, equations, dynamic, static, dynamic_sub, dynamic_xrefs, static_xrefs, dict_lead_lag, dict_lead_lag_subs, param_init, init_val, end_val)
+    (parameters, endogenous, exogenous, exogenous_deterministic, equations, dynamic, static, dynamic_sub, dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs, dict_lead_lag, dict_lead_lag_subs, param_init, init_val, end_val)
 end
 
 function tostatic(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag::Dict{Any,Any})
@@ -254,7 +279,7 @@ end
 
 function compose_derivatives(model)
     nendog = length(model["endogenous"])
-    static_xrefs = collect(model["static_xrefs"])
+    ndynvars = length(model["dynamic_endog_xrefs"]) + length(model["dynamic_exog_xrefs"])
 
     # Static Jacobian
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
