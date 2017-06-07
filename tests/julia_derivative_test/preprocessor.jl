@@ -181,10 +181,12 @@ function parse_json(json_model::Dict{String,Any})
         if i[1][2] != 0
             dict_lead_lag[i[1]] = i[2]
         end
-        if haskey(static_xrefs, i[1][1])
-            static_xrefs[i[1][1]] = union(static_xrefs[i[1][1]], i[2])
-        else
-            static_xrefs[i[1][1]] = i[2]
+        if is_var_type(endogenous, i[1][1])
+            if haskey(static_xrefs, i[1][1])
+                static_xrefs[i[1][1]] = union(static_xrefs[i[1][1]], i[2])
+            else
+                static_xrefs[i[1][1]] = i[2]
+            end
         end
     end
     static, dynamic_sub = dynamic, dynamic
@@ -241,8 +243,8 @@ function get_tsid(model::DataStructures.OrderedDict{String,Any}, vartype::String
     return -1
 end
 
-function is_endog(model::DataStructures.OrderedDict{String,Any}, name::String)
-    for var in model["endogenous"]
+function is_var_type(vartype, name::String)
+    for var in vartype
         if var.name == name
             return true
         end
@@ -252,16 +254,16 @@ end
 
 function compose_derivatives(model)
     nendog = length(model["endogenous"])
+    static_xrefs = collect(model["static_xrefs"])
 
     # Static Jacobian
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
-    for i in model["endogenous"]
-        eqs = model["static_xrefs"][i.name]
-        for eq in eqs
-            deriv = SymEngine.diff(model["static"][eq], SymEngine.symbols(i.name))
+    for i = 1:nendog
+        for eq in model["static_xrefs"][model["endogenous"][i].name]
+            deriv = SymEngine.diff(model["static"][eq], SymEngine.symbols(model["endogenous"][i].name))
             if deriv != 0
                 I = [I; eq]
-                J = [J; get_tsid(model, "endogenous", i.name)]
+                J = [J; i]
                 V = [V; deriv]
             end
         end
@@ -270,35 +272,23 @@ function compose_derivatives(model)
 
     # Static Hessian
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
-    static_xrefs = collect(model["static_xrefs"])
     for i = 1:nendog
-        eqs = staticg1.rowval[staticg1.colptr[i]:staticg1.colptr[i+1]-1]
-        if !isempty(eqs)
-            for j = i:nendog
-                ivar = static_xrefs[i][1]
-                if i == j
-                    # Symmetric elements
-                    for eq in eqs
-                        deriv = SymEngine.diff(staticg1[eq, i], SymEngine.symbols(ivar))
-                        if deriv != 0
-                            I = [I; eq]
-                            J = [J; (i-1)*nendog+i]
-                            V = [V; deriv]
-                        end
-                    end
-                else
-                    # Off diagonal
-                    jvar = static_xrefs[j][1]
-                    eqsj = model["static_xrefs"][jvar]
-                    for eq in eqs
-                        if any(eq .== eqsj)
-                            deriv = SymEngine.diff(staticg1[eq, i], SymEngine.symbols(jvar))
-                            if deriv != 0
-                                I = [I; eq; eq]
-                                J = [J; (i-1)*nendog+j; (j-1)*nendog+i]
-                                V = [V; deriv; deriv]
-                            end
-                        end
+        for eq in staticg1.rowval[staticg1.colptr[i]:staticg1.colptr[i+1]-1]
+            # Diagonal
+            deriv = SymEngine.diff(staticg1[eq, i], SymEngine.symbols(model["endogenous"][i].name))
+            if deriv != 0
+                I = [I; eq]
+                J = [J; (i-1)*nendog+i]
+                V = [V; deriv]
+            end
+            for j = i+1:nendog
+                # Off-diagonal
+                if any(eq .== model["static_xrefs"][model["endogenous"][j].name])
+                    deriv = SymEngine.diff(staticg1[eq, i], SymEngine.symbols(model["endogenous"][j].name))
+                    if deriv != 0
+                        I = [I; eq; eq]
+                        J = [J; (i-1)*nendog+j; (j-1)*nendog+i]
+                        V = [V; deriv; deriv]
                     end
                 end
             end
