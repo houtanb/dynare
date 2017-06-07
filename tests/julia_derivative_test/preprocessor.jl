@@ -250,12 +250,10 @@ end
 
 function subLeadLagsInEqutaions(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag_subs::Dict{Any, String}, dict_lead_lag::Dict{Any,Any})
     for de in dict_lead_lag
-        var = de[1][1]
-        lag = de[1][2]
-        subvar = string("__lead_lag_subvar__", var, lag < 0 ? string("m", abs(lag)) : lag)
+        subvar = string("___", de[1][1], de[1][2] < 0 ? string("m", abs(de[1][2])) : de[1][2], "___")
         dict_lead_lag_subs[de[1]] = subvar
         for i in de[2]
-            subeqs[i] = SymEngine.subs(subeqs[i], SymEngine.Basic(string(var, "(", lag, ")")), SymEngine.symbols(subvar))
+            subeqs[i] = SymEngine.subs(subeqs[i], SymEngine.Basic(string(de[1][1], "(", de[1][2], ")")), SymEngine.symbols(subvar))
         end
     end
 end
