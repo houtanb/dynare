@@ -214,7 +214,7 @@ function parse_json(json_model::Dict{String,Any})
             static_xrefs[i[1][1]] = i[2]
         end
     end
-    static, dynamic_sub = dynamic, dynamic
+    static, dynamic_sub = copy(dynamic), copy(dynamic)
     tostatic(static, dict_lead_lag)
     # Substitute symbols for lead and lagged variables
     # Can drop this part once SymEngine has implemented derivatives of functions. See https://github.com/symengine/SymEngine.jl/issues/53
