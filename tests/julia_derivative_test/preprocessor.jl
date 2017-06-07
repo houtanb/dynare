@@ -42,10 +42,10 @@ function process(modfile::String)
            model["end_val"]) = parse_json(json)
 
     # Calculate derivatives
-    (staticg1, staticg2, dynamic) = compose_derivatives(model)
+    (staticg1, staticg2, dynamicg1) = compose_derivatives(model)
 
     # Return JSON and Julia representation of modfile
-    (json, model, staticg1, staticg2, dynamic)
+    (json, model, staticg1, staticg2, dynamicg1)
     #(json, model)
 end
 
@@ -321,8 +321,26 @@ function compose_derivatives(model)
 
     # Dynamic Jacobian
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
+    col = 1
+    for tup in model["dynamic_endog_xrefs"]
+        if tup[1][2] == 0
+            var = tup[1][1]
+        else
+            @assert abs(tup[1][2]) == 1
+            var = model["dict_lead_lag_subs"][tup[1]]
+        end
 
-    dynamic = sparse(I, J, V)
+        for eq in tup[2]
+            deriv = SymEngine.diff(model["dynamic_sub"][eq], SymEngine.symbols(var))
+            if deriv != 0
+                I = [I; eq]
+                J = [J; col]
+                V = [V; deriv]
+            end
+        end
+        col += 1
+    end
+    dynamicg1 = sparse(I, J, V, nendog, ndynvars)
 
-    (staticg1, staticg2, dynamic)
+    (staticg1, staticg2, dynamicg1)
 end
