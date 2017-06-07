@@ -40,10 +40,10 @@ function process(modfile::String)
            model["end_val"]) = parse_json(json)
 
     # Calculate derivatives
-    (static, dynamic) = compose_derivatives(model)
+    (staticg1, staticg2, dynamic) = compose_derivatives(model)
 
     # Return JSON and Julia representation of modfile
-    (json, model, static, dynamic)
+    (json, model, staticg1, staticg2, dynamic)
 end
 
 function run_preprocessor(modfile::String)
@@ -221,22 +221,6 @@ function tostatic(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag::Dict{Any,Any
     end
 end
 
-function varidx(model, name)
-    idx = 1
-    for endog in model["endogenous"]
-        if endog.name == name
-            return idx
-        end
-        idx += 1
-    end
-    for exog in model["exogenous"]
-        if exog.name == name
-            return idx
-        end
-        idx += 1
-    end
-end
-
 function subLeadLagsInEqutaions(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag_subs::Dict{Any, String}, dict_lead_lag::Dict{Any,Any})
     for de in dict_lead_lag
         var = de[1][1]
@@ -249,7 +233,25 @@ function subLeadLagsInEqutaions(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag
     end
 end
 
+function get_tsid(model::DataStructures.OrderedDict{String,Any}, vartype::String, name::String)
+    idx = 1
+    for var in model[vartype]
+        var.name == name ? (return idx) : idx += 1
+    end
+    return -1
+end
+
+function is_endog(model::DataStructures.OrderedDict{String,Any}, name::String)
+    for var in model["endogenous"]
+        if var.name == name
+            return true
+        end
+    end
+    return false
+end
+
 function compose_derivatives(model)
+    nendog = length(model["endogenous"])
 
     # Static Jacobian
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
@@ -259,17 +261,55 @@ function compose_derivatives(model)
             deriv = SymEngine.diff(model["static"][eq], SymEngine.symbols(i.name))
             if deriv != 0
                 I = [I; eq]
-                J = [J; varidx(model, i.name)]
+                J = [J; get_tsid(model, "endogenous", i.name)]
                 V = [V; deriv]
             end
         end
     end
-    static = sparse(I, J, V)
+    staticg1 = sparse(I, J, V, nendog, nendog)
+
+    # Static Hessian
+    I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
+    static_xrefs = collect(model["static_xrefs"])
+    for i = 1:nendog
+        eqs = staticg1.rowval[staticg1.colptr[i]:staticg1.colptr[i+1]-1]
+        if !isempty(eqs)
+            for j = i:nendog
+                ivar = static_xrefs[i][1]
+                if i == j
+                    # Symmetric elements
+                    for eq in eqs
+                        deriv = SymEngine.diff(staticg1[eq, i], SymEngine.symbols(ivar))
+                        if deriv != 0
+                            I = [I; eq]
+                            J = [J; (i-1)*nendog+i]
+                            V = [V; deriv]
+                        end
+                    end
+                else
+                    # Off diagonal
+                    jvar = static_xrefs[j][1]
+                    eqsj = model["static_xrefs"][jvar]
+                    for eq in eqs
+                        if any(eq .== eqsj)
+                            deriv = SymEngine.diff(staticg1[eq, i], SymEngine.symbols(jvar))
+                            if deriv != 0
+                                I = [I; eq; eq]
+                                J = [J; (i-1)*nendog+j; (j-1)*nendog+i]
+                                V = [V; deriv; deriv]
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    staticg2 = sparse(I, J, V, nendog, nendog^2)
 
     # Dynamic Jacobian
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
-    
+
     dynamic = sparse(I, J, V)
 
-    (static, dynamic)
+    (staticg1, staticg2, dynamic)
 end
