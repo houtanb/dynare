@@ -46,6 +46,9 @@ immutable Param <: Atom
     long_name::String
 end
 
+importall Base.Operators
+==(x::Atom, y::Atom) = x.name == y.name
+
 immutable AuxVars
     endo_index::Int
     var_type::Int
