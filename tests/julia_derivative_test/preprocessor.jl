@@ -199,8 +199,8 @@ function parse_json(json_model::Dict{String,Any})
     end
 
     # Cross References
-    dynamic_exog_xrefs = get_all_exog_xrefs(json_model["xrefs"]["exogenous"])
     dynamic_endog_xrefs = get_all_endog_xrefs(json_model["xrefs"]["endogenous"])
+    dynamic_exog_xrefs = get_all_exog_xrefs(json_model["xrefs"]["exogenous"])
 
     dict_lead_lag = Dict()
     static_xrefs = OrderedDict{Any, Array{Int}}()
@@ -212,6 +212,11 @@ function parse_json(json_model::Dict{String,Any})
             static_xrefs[i[1][1]] = union(static_xrefs[i[1][1]], i[2])
         else
             static_xrefs[i[1][1]] = i[2]
+        end
+    end
+    for i in dynamic_exog_xrefs
+        if i[1][2] != 0
+            dict_lead_lag[i[1]] = i[2]
         end
     end
     static, dynamic_sub = copy(dynamic), copy(dynamic)
@@ -323,13 +328,20 @@ function compose_derivatives(model)
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
     col = 1
     for tup in model["dynamic_endog_xrefs"]
-        if tup[1][2] == 0
-            var = tup[1][1]
-        else
-            @assert abs(tup[1][2]) == 1
-            var = model["dict_lead_lag_subs"][tup[1]]
+        var = tup[1][2] == 0 ? tup[1][1] : model["dict_lead_lag_subs"][tup[1]]
+        for eq in tup[2]
+            deriv = SymEngine.diff(model["dynamic_sub"][eq], SymEngine.symbols(var))
+            if deriv != 0
+                I = [I; eq]
+                J = [J; col]
+                V = [V; deriv]
+            end
         end
+        col += 1
+    end
 
+    for tup in model["dynamic_exog_xrefs"]
+        var = tup[1][2] == 0 ? tup[1][1] : model["dict_lead_lag_subs"][tup[1]]
         for eq in tup[2]
             deriv = SymEngine.diff(model["dynamic_sub"][eq], SymEngine.symbols(var))
             if deriv != 0
