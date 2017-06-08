@@ -66,32 +66,26 @@ function run_preprocessor(modfile::String)
     return modfile
 end
 
-function get_vars(d::OrderedDict{Symbol,Any}, a::Array{Any,1})
-    for i in a
-        d[i["name"]]::String = (i["texName"], i["longName"])::Tuple{String, String}
-    end
-end
-
-function get_vars(d::Array{DynareModel.Endo,1}, a::Array{Any,1})
-    for i in a
+function get_vars(d::Array{DynareModel.Endo,1}, json::Array{Any,1})
+    for i in json
         push!(d, DynareModel.Endo(i["name"]::String, i["texName"]::String, i["longName"]::String))
     end
 end
 
-function get_vars(d::Array{DynareModel.Exo,1}, a::Array{Any,1})
-    for i in a
+function get_vars(d::Array{DynareModel.Exo,1}, json::Array{Any,1})
+    for i in json
         push!(d, DynareModel.Exo(i["name"]::String, i["texName"]::String, i["longName"]::String))
     end
 end
 
-function get_vars(d::Array{DynareModel.Param,1}, a::Array{Any,1})
-    for i in a
+function get_vars(d::Array{DynareModel.Param,1}, json::Array{Any,1})
+    for i in json
         push!(d, DynareModel.Param(i["name"]::String, i["texName"]::String, i["longName"]::String))
     end
 end
 
-function get_vars(d::Array{DynareModel.ExoDet,1}, a::Array{Any,1})
-    for i in a
+function get_vars(d::Array{DynareModel.ExoDet,1}, json::Array{Any,1})
+    for i in json
         push!(d, DynareModel.ExoDet(i["name"]::String, i["texName"]::String, i["longName"]::String))
     end
 end
