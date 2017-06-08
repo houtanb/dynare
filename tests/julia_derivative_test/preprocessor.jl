@@ -16,7 +16,8 @@ function process(modfile::String)
      model["endogenous"],
      model["exogenous"],
      model["exogenous_deterministic"],
-     model["equations"],
+     model["equations_dynamic"],
+     model["equations_static"],
      model["dynamic"],
      model["static"],
      model["dynamic_sub"],
@@ -34,7 +35,8 @@ function process(modfile::String)
            model["endogenous"],
            model["exogenous"],
            model["exogenous_deterministic"],
-           model["equations"],
+           model["equations_dynamic"],
+           model["equations_static"],
            model["dynamic"],
            model["static"],
            model["dynamic_sub"],
@@ -53,7 +55,6 @@ function process(modfile::String)
 
     # Return JSON and Julia representation of modfile
     (json, model, staticg1, staticg2, dynamicg1)
-    #(json, model)
 end
 
 function run_preprocessor(modfile::String)
@@ -155,9 +156,15 @@ function parse_json(json_model::Dict{String,Any})
     #
     # Model Equations
     #
-    equations, dynamic = Array{Expr,1}(), Array{SymEngine.Basic, 1}()
+    equations_dynamic, dynamic = Array{Expr,1}(), Array{SymEngine.Basic, 1}()
     for e in json_model["model"]
-        push!(equations, parse_eq(e))
+        push!(equations_dynamic, parse_eq(e))
+    end
+    equations_static = Array{Expr,1}(length(equations_dynamic))
+    idx = 1
+    for e in equations_dynamic
+        equations_static[idx] = tostatic(e)
+        idx += 1
     end
 
     dict_subs = Dict()
@@ -171,7 +178,7 @@ function parse_json(json_model::Dict{String,Any})
             dict_subs[(string(i), 0)] = string("___", string(i), "___")
         end
     end
-    for e in equations
+    for e in equations_dynamic
         if symengineKeywordPresent
             # NB: SymEngine converts Basic("e") => E,
             #                    but Basic("e(-1)") => symbols("e(-1)")
@@ -213,8 +220,10 @@ function parse_json(json_model::Dict{String,Any})
             end
         end
     end
+    #    static, dynamic_sub = copy(dynamic), copy(dynamic)
     static, dynamic_sub = copy(dynamic), copy(dynamic)
-    tostatic(static, dict_lead_lag)
+    #tostatic(static, dict_lead_lag)
+    tostatic!(static, dict_lead_lag)
     # Substitute symbols for lead and lagged variables
     # Can drop this part once SymEngine has implemented derivatives of functions. See https://github.com/symengine/SymEngine.jl/issues/53
     dict_lead_lag_subs = Dict{Any, String}()
@@ -236,10 +245,10 @@ function parse_json(json_model::Dict{String,Any})
     get_numerical_initialization(end_val, json_model["statements"], "end_val")
 
     # Return
-    (parameters, endogenous, exogenous, exogenous_deterministic, equations, dynamic, static, dynamic_sub, dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs, dict_lead_lag, dict_lead_lag_subs, dict_subs, param_init, init_val, end_val)
+    (parameters, endogenous, exogenous, exogenous_deterministic, equations_dynamic, equations_static, dynamic, static, dynamic_sub, dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs, dict_lead_lag, dict_lead_lag_subs, dict_subs, param_init, init_val, end_val)
 end
 
-function tostatic(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag::Dict{Any,Any})
+function tostatic!(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag::Dict{Any,Any})
     for de in dict_lead_lag
         for i in de[2]
             subeqs[i] = SymEngine.subs(subeqs[i], SymEngine.Basic(string(de[1][1], "(", de[1][2], ")")), SymEngine.symbols(de[1][1]))
@@ -268,6 +277,27 @@ function replaceSymEngineKeyword(expr::Expr)
     ex = copy(expr)
     for (i, arg) in enumerate(expr.args)
         ex.args[i] = replaceSymEngineKeyword(arg)
+    end
+    return ex
+end
+
+
+tostatic(expr::Number) = expr
+tostatic(expr::Symbol) = expr
+function tostatic(expr::Expr)
+    ex = copy(expr)
+    for (i, arg) in enumerate(expr.args)
+        if typeof(ex.args[i]) == Expr &&
+            length(ex.args[i].args) == 2
+            if typeof(ex.args[i].args[1]) == Symbol &&
+                typeof(ex.args[i].args[2]) == Int
+                ex.args[i] = ex.args[i].args[1]
+            else
+                ex.args[i] = tostatic(arg)
+            end
+        else
+            ex.args[i] = tostatic(arg)
+        end
     end
     return ex
 end
