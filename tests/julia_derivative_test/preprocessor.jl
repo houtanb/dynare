@@ -67,26 +67,34 @@ function run_preprocessor(modfile::String)
 end
 
 function get_vars(d::Array{DynareModel.Endo,1}, json::Array{Any,1})
+    idx = 1
     for i in json
-        push!(d, DynareModel.Endo(i["name"]::String, i["texName"]::String, i["longName"]::String))
+        d[idx] = DynareModel.Endo(i["name"]::String, i["texName"]::String, i["longName"]::String)
+        idx += 1
     end
 end
 
 function get_vars(d::Array{DynareModel.Exo,1}, json::Array{Any,1})
+    idx = 1
     for i in json
-        push!(d, DynareModel.Exo(i["name"]::String, i["texName"]::String, i["longName"]::String))
+        d[idx] = DynareModel.Exo(i["name"]::String, i["texName"]::String, i["longName"]::String)
+        idx += 1
     end
 end
 
 function get_vars(d::Array{DynareModel.Param,1}, json::Array{Any,1})
+    idx = 1
     for i in json
-        push!(d, DynareModel.Param(i["name"]::String, i["texName"]::String, i["longName"]::String))
+        d[idx] = DynareModel.Param(i["name"]::String, i["texName"]::String, i["longName"]::String)
+        idx += 1
     end
 end
 
 function get_vars(d::Array{DynareModel.ExoDet,1}, json::Array{Any,1})
+    idx = 1
     for i in json
-        push!(d, DynareModel.ExoDet(i["name"]::String, i["texName"]::String, i["longName"]::String))
+        d[idx] = DynareModel.ExoDet(i["name"]::String, i["texName"]::String, i["longName"]::String)
+        idx += 1
     end
 end
 
@@ -163,7 +171,7 @@ function parse_json(json_model::Dict{String,Any})
 #        OrderedDict{Symbol,Any}(), OrderedDict{Symbol,Any}(), OrderedDict{Symbol,Any}(), OrderedDict{Symbol,Any}()
 
     parameters, endogenous, exogenous, exogenous_deterministic =
-        Array{DynareModel.Param, 1}(), Array{DynareModel.Endo, 1}(), Array{DynareModel.Exo, 1}(), Array{DynareModel.ExoDet, 1}()
+        Array{DynareModel.Param, 1}(length(json_model["parameters"])), Array{DynareModel.Endo, 1}(length(json_model["endogenous"])), Array{DynareModel.Exo, 1}(length(json_model["exogenous"])), Array{DynareModel.ExoDet, 1}(length(json_model["exogenous_deterministic"]))
 
     get_vars(parameters, json_model["parameters"])
     get_vars(endogenous, json_model["endogenous"])
