@@ -98,12 +98,6 @@ function get_vars(d::Array{DynareModel.ExoDet,1}, json::Array{Any,1})
     end
 end
 
-#@generated function get_vars(d, a)
-#    for i in a
-#        push!()
-#    end
-#end
-
 function parse_eq(eq::Dict{String,Any})
     if eq["rhs"] == "0"
         return parse(eq["lhs"])
@@ -148,28 +142,8 @@ function get_xrefs(json::Array{Any,1})
     merge(lag, t, lead)
 end
 
-function get_endog_xrefs(dict::Dict{Any, Any}, a::Array{Any,1})
-    for i in a
-        if i["shift"] != 0
-            dict[(i["endogenous"], i["shift"])] = round(Int, i["equations"])
-        end
-    end
-end
-
-function get_exog_xrefs(dict::Dict{Any, Any}, a::Array{Any,1})
-    for i in a
-        if i["shift"] != 0
-            dict[(i["exogenous"], i["shift"])] = round(Int, i["equations"])
-        end
-    end
-end
-
 function parse_json(json_model::Dict{String,Any})
     # Model variables, parameters
-#    MUCH SLOWER THIS WAY
-#    parameters, endogenous, exogenous, exogenous_deterministic =
-#        OrderedDict{Symbol,Any}(), OrderedDict{Symbol,Any}(), OrderedDict{Symbol,Any}(), OrderedDict{Symbol,Any}()
-
     parameters, endogenous, exogenous, exogenous_deterministic =
         Array{DynareModel.Param, 1}(length(json_model["parameters"])), Array{DynareModel.Endo, 1}(length(json_model["endogenous"])), Array{DynareModel.Exo, 1}(length(json_model["exogenous"])), Array{DynareModel.ExoDet, 1}(length(json_model["exogenous_deterministic"]))
 
@@ -296,23 +270,6 @@ function replaceSymEngineKeyword(expr::Expr)
         ex.args[i] = replaceSymEngineKeyword(arg)
     end
     return ex
-end
-
-function get_tsid(model::DataStructures.OrderedDict{String,Any}, vartype::String, name::String)
-    idx = 1
-    for var in model[vartype]
-        var.name == name ? (return idx) : idx += 1
-    end
-    return -1
-end
-
-function is_var_type(vartype, name::String)
-    for var in vartype
-        if var.name == name
-            return true
-        end
-    end
-    return false
 end
 
 function compose_derivatives(model)
