@@ -24,8 +24,6 @@ function process(modfile::String)
      model["dynamic_endog_xrefs"],
      model["dynamic_exog_xrefs"],
      model["static_xrefs"],
-     model["dict_lead_lag"],
-     model["dict_lead_lag_subs"],
      model["dict_subs"],
      model["param_init"],
      model["init_val"],
@@ -43,8 +41,6 @@ function process(modfile::String)
            model["dynamic_endog_xrefs"],
            model["dynamic_exog_xrefs"],
            model["static_xrefs"],
-           model["dict_lead_lag"],
-           model["dict_lead_lag_subs"],
            model["dict_subs"],
            model["param_init"],
            model["init_val"],
@@ -166,8 +162,14 @@ function parse_json(json_model::Dict{String,Any})
         equations_static[idx] = tostatic([endogenous; exogenous; exogenous_deterministic], e)
         idx += 1
     end
+    static = Array{SymEngine.Basic,1}(length(equations_static))
+    idx = 1
+    for e in equations_static
+        static[idx] = SymEngine.Basic(e)
+        idx += 1
+    end
 
-    dict_subs = Dict()
+    dict_subs = Dict{Any, String}()
     symengineKeywordPresent = false
     if !isempty(filter(x->x in endogenous, SymEngineKeywordAtoms)) ||
         !isempty(filter(x->x in exogenous, SymEngineKeywordAtoms)) ||
@@ -193,11 +195,9 @@ function parse_json(json_model::Dict{String,Any})
     dynamic_endog_xrefs = get_xrefs(json_model["xrefs"]["endogenous"])
     dynamic_exog_xrefs = get_xrefs(json_model["xrefs"]["exogenous"])
 
-    dict_lead_lag = Dict()
     static_xrefs = OrderedDict{Any, Array{Int}}()
     for i in dynamic_endog_xrefs
         if i[1][2] != 0
-            dict_lead_lag[i[1]] = i[2]
             dict_subs[i[1]] = string("___", i[1][1], i[1][2] == -1 ? "m1" : "1", "___")
         else
             if !haskey(dict_subs, i[1])
@@ -212,7 +212,6 @@ function parse_json(json_model::Dict{String,Any})
     end
     for i in dynamic_exog_xrefs
         if i[1][2] != 0
-            dict_lead_lag[i[1]] = i[2]
             dict_subs[i[1]] = string("___", i[1][1], i[1][2] == -1 ? "m1" : "1", "___")
         else
             if !haskey(dict_subs, i[1])
@@ -220,14 +219,12 @@ function parse_json(json_model::Dict{String,Any})
             end
         end
     end
-    #    static, dynamic_sub = copy(dynamic), copy(dynamic)
-    static, dynamic_sub = copy(dynamic), copy(dynamic)
-    #tostatic(static, dict_lead_lag)
-    tostatic!(static, dict_lead_lag)
+
     # Substitute symbols for lead and lagged variables
-    # Can drop this part once SymEngine has implemented derivatives of functions. See https://github.com/symengine/SymEngine.jl/issues/53
-    dict_lead_lag_subs = Dict{Any, String}()
-    subLeadLagsInEqutaions(dynamic_sub, dict_lead_lag_subs, dict_lead_lag)
+    # Can drop this part once SymEngine has implemented derivatives of functions.
+    # See https://github.com/symengine/SymEngine.jl/issues/53
+    dynamic_sub = copy(dynamic)
+    subLeadLagsInEqutaions!(dynamic_sub, dict_subs, merge(dynamic_endog_xrefs, dynamic_exog_xrefs))
 
     #
     # Statements
@@ -245,23 +242,15 @@ function parse_json(json_model::Dict{String,Any})
     get_numerical_initialization(end_val, json_model["statements"], "end_val")
 
     # Return
-    (parameters, endogenous, exogenous, exogenous_deterministic, equations_dynamic, equations_static, dynamic, static, dynamic_sub, dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs, dict_lead_lag, dict_lead_lag_subs, dict_subs, param_init, init_val, end_val)
+    (parameters, endogenous, exogenous, exogenous_deterministic, equations_dynamic, equations_static, dynamic, static, dynamic_sub, dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs, dict_subs, param_init, init_val, end_val)
 end
 
-function tostatic!(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag::Dict{Any,Any})
+function subLeadLagsInEqutaions!(subeqs::Array{SymEngine.Basic, 1}, dict_subs::Dict{Any, String}, dict_lead_lag::DataStructures.OrderedDict{Any,Array{Int64}})
     for de in dict_lead_lag
-        for i in de[2]
-            subeqs[i] = SymEngine.subs(subeqs[i], SymEngine.Basic(string(de[1][1], "(", de[1][2], ")")), SymEngine.symbols(de[1][1]))
-        end
-    end
-end
-
-function subLeadLagsInEqutaions(subeqs::Array{SymEngine.Basic, 1}, dict_lead_lag_subs::Dict{Any, String}, dict_lead_lag::Dict{Any,Any})
-    for de in dict_lead_lag
-        subvar = string("___", de[1][1], de[1][2] < 0 ? string("m", abs(de[1][2])) : de[1][2], "___")
-        dict_lead_lag_subs[de[1]] = subvar
-        for i in de[2]
-            subeqs[i] = SymEngine.subs(subeqs[i], SymEngine.Basic(string(de[1][1], "(", de[1][2], ")")), SymEngine.symbols(subvar))
+        if (de[1][2] != 0)
+            for i in de[2]
+                subeqs[i] = SymEngine.subs(subeqs[i], SymEngine.Basic(string(de[1][1], "(", de[1][2], ")")), SymEngine.symbols(dict_subs[de[1]]))
+            end
         end
     end
 end
@@ -280,7 +269,6 @@ function replaceSymEngineKeyword(expr::Expr)
     end
     return ex
 end
-
 
 tostatic(vars, expr::Number) = expr
 tostatic(vars, expr::Symbol) = expr
