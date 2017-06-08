@@ -163,7 +163,7 @@ function parse_json(json_model::Dict{String,Any})
     equations_static = Array{Expr,1}(length(equations_dynamic))
     idx = 1
     for e in equations_dynamic
-        equations_static[idx] = tostatic(e)
+        equations_static[idx] = tostatic([endogenous; exogenous; exogenous_deterministic], e)
         idx += 1
     end
 
@@ -282,21 +282,22 @@ function replaceSymEngineKeyword(expr::Expr)
 end
 
 
-tostatic(expr::Number) = expr
-tostatic(expr::Symbol) = expr
-function tostatic(expr::Expr)
+tostatic(vars, expr::Number) = expr
+tostatic(vars, expr::Symbol) = expr
+function tostatic(vars, expr::Expr)
     ex = copy(expr)
     for (i, arg) in enumerate(expr.args)
         if typeof(ex.args[i]) == Expr &&
             length(ex.args[i].args) == 2
             if typeof(ex.args[i].args[1]) == Symbol &&
-                typeof(ex.args[i].args[2]) == Int
+                typeof(ex.args[i].args[2]) == Int &&
+                any(ex.args[i].args[1] .== vars)
                 ex.args[i] = ex.args[i].args[1]
             else
-                ex.args[i] = tostatic(arg)
+                ex.args[i] = tostatic(vars, arg)
             end
         else
-            ex.args[i] = tostatic(arg)
+            ex.args[i] = tostatic(vars, arg)
         end
     end
     return ex
