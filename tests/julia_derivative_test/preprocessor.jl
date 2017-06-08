@@ -128,35 +128,17 @@ function get_numerical_initialization(d::OrderedDict{Symbol,Number}, a::Array{An
     end
 end
 
-function get_all_endog_xrefs(a::Array{Any,1})
+function get_xrefs(json::Array{Any,1})
     lag = OrderedDict{Any, Array{Int}}()
     t = OrderedDict{Any, Array{Int}}()
     lead = OrderedDict{Any, Array{Int}}()
-    for i in a
+    for i in json
         if i["shift"] == -1
-            lag[(i["endogenous"], -1)] = round(Int, i["equations"])
+            lag[(i["name"], -1)] = round(Int, i["equations"])
         elseif i["shift"] == 0
-            t[(i["endogenous"], 0)] = round(Int, i["equations"])
+            t[(i["name"], 0)] = round(Int, i["equations"])
         elseif i["shift"] == 1
-            lead[(i["endogenous"], 1)] = round(Int, i["equations"])
-        else
-            @assert false
-        end
-    end
-    merge(lag, t, lead)
-end
-
-function get_all_exog_xrefs(a::Array{Any,1})
-    lag = OrderedDict{Any, Array{Int}}()
-    t = OrderedDict{Any, Array{Int}}()
-    lead = OrderedDict{Any, Array{Int}}()
-    for i in a
-        if i["shift"] == -1
-            lag[(i["exogenous"], -1)] = round(Int, i["equations"])
-        elseif i["shift"] == 0
-            t[(i["exogenous"], 0)] = round(Int, i["equations"])
-        elseif i["shift"] == 1
-            lead[(i["exogenous"], 1)] = round(Int, i["equations"])
+            lead[(i["name"], 1)] = round(Int, i["equations"])
         else
             @assert false
         end
@@ -225,8 +207,8 @@ function parse_json(json_model::Dict{String,Any})
     end
 
     # Cross References
-    dynamic_endog_xrefs = get_all_endog_xrefs(json_model["xrefs"]["endogenous"])
-    dynamic_exog_xrefs = get_all_exog_xrefs(json_model["xrefs"]["exogenous"])
+    dynamic_endog_xrefs = get_xrefs(json_model["xrefs"]["endogenous"])
+    dynamic_exog_xrefs = get_xrefs(json_model["xrefs"]["exogenous"])
 
     dict_lead_lag = Dict()
     static_xrefs = OrderedDict{Any, Array{Int}}()
