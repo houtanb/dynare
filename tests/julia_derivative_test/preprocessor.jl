@@ -32,7 +32,6 @@ function process(modfile::String)
      model["dynamic_endog_xrefs"],
      model["dynamic_exog_xrefs"],
      model["static_xrefs"],
-     model["dict_subs"],
      model["param_init"],
      model["init_val"],
      model["end_val"]) = parse_json(json)
@@ -48,7 +47,6 @@ function process(modfile::String)
            model["dynamic_endog_xrefs"],
            model["dynamic_exog_xrefs"],
            model["static_xrefs"],
-           model["dict_subs"],
            model["param_init"],
            model["init_val"],
            model["end_val"]) = parse_json(json)
@@ -128,22 +126,16 @@ function get_numerical_initialization(d::OrderedDict{Symbol,Number}, a::Array{An
     end
 end
 
-function get_xrefs(json::Array{Any,1})
-    lag = OrderedDict{Any, Array{Int}}()
-    t = OrderedDict{Any, Array{Int}}()
-    lead = OrderedDict{Any, Array{Int}}()
+function get_xrefs!(xrefs::Dict{Any, Any}, json::Array{Any, 1})
     for i in json
-        if i["shift"] == -1
-            lag[(i["name"], -1)] = round(Int, i["equations"])
-        elseif i["shift"] == 0
-            t[(i["name"], 0)] = round(Int, i["equations"])
-        elseif i["shift"] == 1
-            lead[(i["name"], 1)] = round(Int, i["equations"])
+        if i["shift"] == 0
+            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]), i["name"])
+        elseif i["shift"] == -1
+            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]), string("___", i["name"], "m1___"))
         else
-            @assert false
+            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]), string("___", i["name"], "1___"))
         end
     end
-    merge(lag, t, lead)
 end
 
 function parse_json(json_model::Dict{String,Any})
@@ -177,16 +169,33 @@ function parse_json(json_model::Dict{String,Any})
     end
 
     #
-    # Equations in SymEngine form: dynamic, static
-    dict_subs = Dict{Any, String}()
-    nonDynareSymEngineKeywordPresent = false
-    if nonDynareSymEngineKeyWordAtom in endogenous ||
-        nonDynareSymEngineKeyWordAtom in exogenous ||
-        nonDynareSymEngineKeyWordAtom in exogenous_deterministic ||
-        nonDynareSymEngineKeyWordAtom in parameters
+    # Equation Cross References
+    dynamic_endog_xrefs, dynamic_exog_xrefs = Dict(), Dict()
+    get_xrefs!(dynamic_endog_xrefs, json_model["xrefs"]["endogenous"])
+    get_xrefs!(dynamic_exog_xrefs, json_model["xrefs"]["exogenous"])
 
+    static_xrefs = Dict{Any, Array{Int}}()
+    for i in dynamic_endog_xrefs
+        if haskey(static_xrefs, i[1][1])
+            static_xrefs[i[1][1]] = union(static_xrefs[i[1][1]], i[2][1])
+        else
+            static_xrefs[i[1][1]] = i[2][1]
+        end
+    end
+
+    #
+    # Equations in SymEngine form: dynamic, static
+    nonDynareSymEngineKeywordPresent = false
+    if nonDynareSymEngineKeyWordAtom in endogenous
         nonDynareSymEngineKeywordPresent = true
-        dict_subs[(nonDynareSymEngineKeyWordString, 0)] = nonDynareSymEngineKeyWordStringSub
+        dynamic_endog_xrefs[(nonDynareSymEngineKeyWordString, 0)] = (dynamic_endog_xrefs[(nonDynareSymEngineKeyWordString, 0)][1],
+                                                                     nonDynareSymEngineKeyWordStringSub)
+    elseif nonDynareSymEngineKeyWordAtom in exogenous || nonDynareSymEngineKeyWordAtom in exogenous_deterministic
+        nonDynareSymEngineKeywordPresent = true
+        dynamic_exog_xrefs[(nonDynareSymEngineKeyWordString, 0)] = (dynamic_exog_xrefs[(nonDynareSymEngineKeyWordString, 0)][1],
+                                                                    nonDynareSymEngineKeyWordStringSub)
+    elseif nonDynareSymEngineKeyWordAtom in parameters
+        nonDynareSymEngineKeywordPresent = true
     end
 
     idx = 1
@@ -210,40 +219,10 @@ function parse_json(json_model::Dict{String,Any})
         idx += 1
     end
 
-    #
-    # Equation Cross References
-    dynamic_endog_xrefs = get_xrefs(json_model["xrefs"]["endogenous"])
-    dynamic_exog_xrefs = get_xrefs(json_model["xrefs"]["exogenous"])
-
-    static_xrefs = OrderedDict{Any, Array{Int}}()
-    for i in dynamic_endog_xrefs
-        if i[1][2] != 0
-            dict_subs[i[1]] = string("___", i[1][1], i[1][2] == -1 ? "m1" : "1", "___")
-        else
-            if !haskey(dict_subs, i[1])
-                dict_subs[i[1]] = i[1][1]
-            end
-        end
-        if haskey(static_xrefs, i[1][1])
-            static_xrefs[i[1][1]] = union(static_xrefs[i[1][1]], i[2])
-        else
-            static_xrefs[i[1][1]] = i[2]
-        end
-    end
-    for i in dynamic_exog_xrefs
-        if i[1][2] != 0
-            dict_subs[i[1]] = string("___", i[1][1], i[1][2] == -1 ? "m1" : "1", "___")
-        else
-            if !haskey(dict_subs, i[1])
-                dict_subs[i[1]] = i[1][1]
-            end
-        end
-    end
-
     # Substitute symbols for lead and lagged variables
     # Can drop this part once SymEngine has implemented derivatives of functions.
     # See https://github.com/symengine/SymEngine.jl/issues/53
-    subLeadLagsInEqutaions!(dynamic, dict_subs, merge(dynamic_endog_xrefs, dynamic_exog_xrefs))
+    subLeadLagsInEqutaions!(dynamic, merge(dynamic_endog_xrefs, dynamic_exog_xrefs))
 
     #
     # Statements
@@ -265,19 +244,17 @@ function parse_json(json_model::Dict{String,Any})
      equations_dynamic, equations_static,
      dynamic, static,
      dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs,
-     dict_subs,
      param_init, init_val, end_val)
 end
 
 function subLeadLagsInEqutaions!(subeqs::Array{SymEngine.Basic, 1},
-                                 dict_subs::Dict{Any, String},
-                                 dict_lead_lag::DataStructures.OrderedDict{Any,Array{Int64}})
+                                 dict_lead_lag::Dict{Any, Any})
     for de in dict_lead_lag
         if (de[1][2] != 0)
-            for i in de[2]
+            for i in de[2][1]
                 subeqs[i] = SymEngine.subs(subeqs[i],
                                            SymEngine.Basic(string(de[1][1], "(", de[1][2], ")")),
-                                           SymEngine.symbols(dict_subs[de[1]]))
+                                           SymEngine.symbols(de[2][2]))
             end
         end
     end
@@ -362,8 +339,8 @@ function compose_derivatives(model)
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
     col = 1
     for tup in model["dynamic_endog_xrefs"]
-        for eq in tup[2]
-            deriv = SymEngine.diff(model["dynamic"][eq], SymEngine.symbols(model["dict_subs"][tup[1]]))
+        for eq in tup[2][1]
+            deriv = SymEngine.diff(model["dynamic"][eq], SymEngine.symbols(tup[2][2]))
             if deriv != 0
                 I = [I; eq]
                 J = [J; col]
@@ -374,8 +351,8 @@ function compose_derivatives(model)
     end
 
     for tup in model["dynamic_exog_xrefs"]
-        for eq in tup[2]
-            deriv = SymEngine.diff(model["dynamic"][eq], SymEngine.symbols(model["dict_subs"][tup[1]]))
+        for eq in tup[2][1]
+            deriv = SymEngine.diff(model["dynamic"][eq], SymEngine.symbols(tup[2][2]))
             if deriv != 0
                 I = [I; eq]
                 J = [J; col]
