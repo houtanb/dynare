@@ -1,10 +1,19 @@
 import JSON
 import SymEngine
 
-# See below for why we need this
-SymEngineKeyWords = ["e"]
-SymEngineKeyWords = [Symbol(kw) for kw in SymEngineKeyWords]
-SymEngineKeywordAtoms = [DynareModel.Endo(string(i), string(i), string(i)) for i in SymEngineKeyWords]
+
+# NB: SymEngine converts Basic("e") => E,
+#                    but Basic("e(-1)") => symbols("e(-1)")
+#                    and Basic("e(1)") => symbols("e(1)")
+# To fix this, we substitute e at time t.
+# Define constants needed to do this here.
+# The workhorse function is replaceNonDynareSymEngineKeyword
+const nonDynareSymEngineKeyWordString = "e"
+const nonDynareSymEngineKeyWordSymbol = Symbol(nonDynareSymEngineKeyWordString)
+const nonDynareSymEngineKeyWordStringSub = string("___e___")
+const nonDynareSymEngineKeyWordSymbolSub = Symbol(nonDynareSymEngineKeyWordStringSub)
+const nonDynareSymEngineKeyWordAtom = DynareModel.Endo(nonDynareSymEngineKeyWordString, nonDynareSymEngineKeyWordString, nonDynareSymEngineKeyWordString)
+# END NB
 
 function process(modfile::String)
     # Run Dynare preprocessor get JSON output
@@ -169,26 +178,21 @@ function parse_json(json_model::Dict{String,Any})
     #
     # Equations in SymEngine form: dynamic, static
     dict_subs = Dict{Any, String}()
-    symengineKeywordPresent = false
-    if !isempty(filter(x->x in endogenous, SymEngineKeywordAtoms)) ||
-        !isempty(filter(x->x in exogenous, SymEngineKeywordAtoms)) ||
-        !isempty(filter(x->x in exogenous_deterministic, SymEngineKeywordAtoms)) ||
-        !isempty(filter(x->x in parameters, SymEngineKeywordAtoms))
-        symengineKeywordPresent = true
-        for i in SymEngineKeyWords
-            dict_subs[(string(i), 0)] = string("___", string(i), "___")
-        end
+    nonDynareSymEngineKeywordPresent = false
+    if nonDynareSymEngineKeyWordAtom in endogenous ||
+        nonDynareSymEngineKeyWordAtom in exogenous ||
+        nonDynareSymEngineKeyWordAtom in exogenous_deterministic ||
+        nonDynareSymEngineKeyWordAtom in parameters
+
+        nonDynareSymEngineKeywordPresent = true
+        dict_subs[(nonDynareSymEngineKeyWordString, 0)] = nonDynareSymEngineKeyWordStringSub
     end
 
     idx = 1
     static = Array{SymEngine.Basic, 1}(length(equations_static))
     for e in equations_static
-        if symengineKeywordPresent
-            # NB: SymEngine converts Basic("e") => E,
-            #                    but Basic("e(-1)") => symbols("e(-1)")
-            #                    and Basic("e(1)") => symbols("e(1)")
-            # To fix this, we substitute e at time t
-            e = replaceSymEngineKeyword(e)
+        if nonDynareSymEngineKeywordPresent
+            e = replaceNonDynareSymEngineKeyword(e)
         end
         static[idx] = SymEngine.Basic(e)
         idx += 1
@@ -197,9 +201,9 @@ function parse_json(json_model::Dict{String,Any})
     idx = 1
     dynamic = Array{SymEngine.Basic, 1}(length(equations_dynamic))
     for e in equations_dynamic
-        if symengineKeywordPresent
+        if nonDynareSymEngineKeywordPresent
             # NB: See explanation in conversion to static
-            e = replaceSymEngineKeyword(e)
+            e = replaceNonDynareSymEngineKeyword(e)
         end
         dynamic[idx] = SymEngine.Basic(e)
         idx += 1
@@ -270,17 +274,12 @@ function subLeadLagsInEqutaions!(subeqs::Array{SymEngine.Basic, 1}, dict_subs::D
     end
 end
 
-# Replace "e" in equations
-# Cannot be done on equations that have already passed through SymEngine.Basic
-# Because we can't differentiate between E that comes from e and E that comes from exp
-# as e and exp are equivalent in SymEngine
-replaceSymEngineKeyword(a::Number) = a
-replaceSymEngineKeyword(a::Symbol) = a in SymEngineKeyWords ? Symbol("___", string(a), "___") : a
-
-function replaceSymEngineKeyword(expr::Expr)
+replaceNonDynareSymEngineKeyword(expr::Number) = expr
+replaceNonDynareSymEngineKeyword(expr::Symbol) = expr == nonDynareSymEngineKeyWordSymbol ? nonDynareSymEngineKeyWordSymbolSub : expr
+function replaceNonDynareSymEngineKeyword(expr::Expr)
     ex = copy(expr)
     for (i, arg) in enumerate(expr.args)
-        ex.args[i] = replaceSymEngineKeyword(arg)
+        ex.args[i] = replaceNonDynareSymEngineKeyword(arg)
     end
     return ex
 end
