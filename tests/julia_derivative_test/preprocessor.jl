@@ -149,7 +149,10 @@ end
 function parse_json(json_model::Dict{String,Any})
     # Model variables, parameters
     parameters, endogenous, exogenous, exogenous_deterministic =
-        Array{DynareModel.Param, 1}(length(json_model["parameters"])), Array{DynareModel.Endo, 1}(length(json_model["endogenous"])), Array{DynareModel.Exo, 1}(length(json_model["exogenous"])), Array{DynareModel.ExoDet, 1}(length(json_model["exogenous_deterministic"]))
+        (Array{DynareModel.Param, 1}(length(json_model["parameters"])),
+         Array{DynareModel.Endo, 1}(length(json_model["endogenous"])),
+         Array{DynareModel.Exo, 1}(length(json_model["exogenous"])),
+         Array{DynareModel.ExoDet, 1}(length(json_model["exogenous_deterministic"])))
 
     get_vars!(parameters, json_model["parameters"])
     get_vars!(endogenous, json_model["endogenous"])
@@ -258,14 +261,23 @@ function parse_json(json_model::Dict{String,Any})
     get_numerical_initialization(end_val, json_model["statements"], "end_val")
 
     # Return
-    (parameters, endogenous, exogenous, exogenous_deterministic, equations_dynamic, equations_static, dynamic, static, dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs, dict_subs, param_init, init_val, end_val)
+    (parameters, endogenous, exogenous, exogenous_deterministic,
+     equations_dynamic, equations_static,
+     dynamic, static,
+     dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs,
+     dict_subs,
+     param_init, init_val, end_val)
 end
 
-function subLeadLagsInEqutaions!(subeqs::Array{SymEngine.Basic, 1}, dict_subs::Dict{Any, String}, dict_lead_lag::DataStructures.OrderedDict{Any,Array{Int64}})
+function subLeadLagsInEqutaions!(subeqs::Array{SymEngine.Basic, 1},
+                                 dict_subs::Dict{Any, String},
+                                 dict_lead_lag::DataStructures.OrderedDict{Any,Array{Int64}})
     for de in dict_lead_lag
         if (de[1][2] != 0)
             for i in de[2]
-                subeqs[i] = SymEngine.subs(subeqs[i], SymEngine.Basic(string(de[1][1], "(", de[1][2], ")")), SymEngine.symbols(dict_subs[de[1]]))
+                subeqs[i] = SymEngine.subs(subeqs[i],
+                                           SymEngine.Basic(string(de[1][1], "(", de[1][2], ")")),
+                                           SymEngine.symbols(dict_subs[de[1]]))
             end
         end
     end
