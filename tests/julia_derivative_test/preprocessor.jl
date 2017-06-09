@@ -294,6 +294,10 @@ function tostatic(vars, expr::Expr)
     return ex
 end
 
+function get_static_symbol(dynamic_endog_xrefs, name::String)
+    haskey(dynamic_endog_xrefs, (name, 0)) ? dynamic_endog_xrefs[(name, 0)][2] : SymEngine.symbols(name)
+end
+
 function compose_derivatives(model)
     nendog = length(model["endogenous"])
     ndynvars = length(model["dynamic_endog_xrefs"]) + length(model["dynamic_exog_xrefs"])
@@ -302,7 +306,8 @@ function compose_derivatives(model)
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
     for i = 1:nendog
         for eq in model["static_xrefs"][model["endogenous"][i].name]
-            deriv = SymEngine.diff(model["static"][eq], SymEngine.symbols(model["endogenous"][i].name))
+            deriv = SymEngine.diff(model["static"][eq],
+                                   get_static_symbol(model["dynamic_endog_xrefs"], model["endogenous"][i].name))
             if deriv != 0
                 I = [I; eq]
                 J = [J; i]
@@ -317,7 +322,8 @@ function compose_derivatives(model)
     for i = 1:nendog
         for eq in staticg1.rowval[staticg1.colptr[i]:staticg1.colptr[i+1]-1]
             # Diagonal
-            deriv = SymEngine.diff(staticg1[eq, i], SymEngine.symbols(model["endogenous"][i].name))
+            deriv = SymEngine.diff(staticg1[eq, i],
+                                   get_static_symbol(model["dynamic_endog_xrefs"], model["endogenous"][i].name))
             if deriv != 0
                 I = [I; eq]
                 J = [J; (i-1)*nendog+i]
@@ -326,7 +332,8 @@ function compose_derivatives(model)
             for j = i+1:nendog
                 # Off-diagonal
                 if any(eq .== model["static_xrefs"][model["endogenous"][j].name])
-                    deriv = SymEngine.diff(staticg1[eq, i], SymEngine.symbols(model["endogenous"][j].name))
+                    deriv = SymEngine.diff(staticg1[eq, i],
+                                           get_static_symbol(model["dynamic_endog_xrefs"], model["endogenous"][j].name))
                     if deriv != 0
                         I = [I; eq; eq]
                         J = [J; (i-1)*nendog+j; (j-1)*nendog+i]
