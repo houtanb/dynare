@@ -12,6 +12,7 @@ const nonDynareSymEngineKeyWordString = "e"
 const nonDynareSymEngineKeyWordSymbol = Symbol(nonDynareSymEngineKeyWordString)
 const nonDynareSymEngineKeyWordStringSub = string("___e___")
 const nonDynareSymEngineKeyWordSymbolSub = Symbol(nonDynareSymEngineKeyWordStringSub)
+const nonDynareSymEngineKeyWordSymEngineSymbolSub = SymEngine.symbols(nonDynareSymEngineKeyWordStringSub)
 const nonDynareSymEngineKeyWordAtom = DynareModel.Endo(nonDynareSymEngineKeyWordString, nonDynareSymEngineKeyWordString, nonDynareSymEngineKeyWordString)
 # END NB
 
@@ -129,11 +130,14 @@ end
 function get_xrefs!(xrefs::Dict{Any, Any}, json::Array{Any, 1})
     for i in json
         if i["shift"] == 0
-            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]), i["name"])
+            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]),
+                                              SymEngine.symbols(i["name"]))
         elseif i["shift"] == -1
-            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]), string("___", i["name"], "m1___"))
+            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]),
+                                              SymEngine.symbols(string("___", i["name"], "m1___")))
         else
-            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]), string("___", i["name"], "1___"))
+            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]),
+                                              SymEngine.symbols(string("___", i["name"], "1___")))
         end
     end
 end
@@ -189,11 +193,11 @@ function parse_json(json_model::Dict{String,Any})
     if nonDynareSymEngineKeyWordAtom in endogenous
         nonDynareSymEngineKeywordPresent = true
         dynamic_endog_xrefs[(nonDynareSymEngineKeyWordString, 0)] = (dynamic_endog_xrefs[(nonDynareSymEngineKeyWordString, 0)][1],
-                                                                     nonDynareSymEngineKeyWordStringSub)
+                                                                     nonDynareSymEngineKeyWordSymEngineSymbolSub)
     elseif nonDynareSymEngineKeyWordAtom in exogenous || nonDynareSymEngineKeyWordAtom in exogenous_deterministic
         nonDynareSymEngineKeywordPresent = true
         dynamic_exog_xrefs[(nonDynareSymEngineKeyWordString, 0)] = (dynamic_exog_xrefs[(nonDynareSymEngineKeyWordString, 0)][1],
-                                                                    nonDynareSymEngineKeyWordStringSub)
+                                                                    nonDynareSymEngineKeyWordSymEngineSymbolSub)
     elseif nonDynareSymEngineKeyWordAtom in parameters
         nonDynareSymEngineKeywordPresent = true
     end
@@ -212,7 +216,6 @@ function parse_json(json_model::Dict{String,Any})
     dynamic = Array{SymEngine.Basic, 1}(length(equations_dynamic))
     for e in equations_dynamic
         if nonDynareSymEngineKeywordPresent
-            # NB: See explanation in conversion to static
             e = replaceNonDynareSymEngineKeyword(e)
         end
         dynamic[idx] = SymEngine.Basic(e)
@@ -254,7 +257,7 @@ function subLeadLagsInEqutaions!(subeqs::Array{SymEngine.Basic, 1},
             for i in de[2][1]
                 subeqs[i] = SymEngine.subs(subeqs[i],
                                            SymEngine.Basic(string(de[1][1], "(", de[1][2], ")")),
-                                           SymEngine.symbols(de[2][2]))
+                                           de[2][2])
             end
         end
     end
@@ -340,7 +343,7 @@ function compose_derivatives(model)
     col = 1
     for tup in model["dynamic_endog_xrefs"]
         for eq in tup[2][1]
-            deriv = SymEngine.diff(model["dynamic"][eq], SymEngine.symbols(tup[2][2]))
+            deriv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
             if deriv != 0
                 I = [I; eq]
                 J = [J; col]
@@ -352,7 +355,7 @@ function compose_derivatives(model)
 
     for tup in model["dynamic_exog_xrefs"]
         for eq in tup[2][1]
-            deriv = SymEngine.diff(model["dynamic"][eq], SymEngine.symbols(tup[2][2]))
+            deriv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
             if deriv != 0
                 I = [I; eq]
                 J = [J; col]
