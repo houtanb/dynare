@@ -109,7 +109,7 @@ function parse_eq(eq::Dict{String,Any})
     return :($lhs - $rhs)
 end
 
-function get_param_inits(d::OrderedDict{Symbol,Number}, a::Array{Any,1})
+function get_param_inits!(d::OrderedDict{Symbol,Number}, a::Array{Any,1})
     for st in a
         if st["statementName"] == "param_init"
             d[Symbol(st["name"])] = parse(st["value"])::Number
@@ -117,7 +117,7 @@ function get_param_inits(d::OrderedDict{Symbol,Number}, a::Array{Any,1})
     end
 end
 
-function get_numerical_initialization(d::OrderedDict{Symbol,Number}, a::Array{Any,1}, field::String)
+function get_numerical_initialization!(d::OrderedDict{Symbol,Number}, a::Array{Any,1}, field::String)
     for st in a
         if st["statementName"] == field
             for v in st["vals"]
@@ -232,15 +232,15 @@ function parse_json(json_model::Dict{String,Any})
     #
     # Param Init
     param_init = OrderedDict{Symbol,Number}()
-    get_param_inits(param_init, json_model["statements"])
+    get_param_inits!(param_init, json_model["statements"])
 
     # Init Val
     init_val = OrderedDict{Symbol,Number}()
-    get_numerical_initialization(init_val, json_model["statements"], "init_val")
+    get_numerical_initialization!(init_val, json_model["statements"], "init_val")
 
     # End Val
     end_val = OrderedDict{Symbol,Number}()
-    get_numerical_initialization(end_val, json_model["statements"], "end_val")
+    get_numerical_initialization!(end_val, json_model["statements"], "end_val")
 
     # Return
     (parameters, endogenous, exogenous, exogenous_deterministic,
