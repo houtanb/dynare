@@ -29,7 +29,6 @@ function process(modfile::String)
      model["equations_static"],
      model["dynamic"],
      model["static"],
-     model["dynamic_sub"],
      model["dynamic_endog_xrefs"],
      model["dynamic_exog_xrefs"],
      model["static_xrefs"],
@@ -46,7 +45,6 @@ function process(modfile::String)
            model["equations_static"],
            model["dynamic"],
            model["static"],
-           model["dynamic_sub"],
            model["dynamic_endog_xrefs"],
            model["dynamic_exog_xrefs"],
            model["static_xrefs"],
@@ -242,8 +240,7 @@ function parse_json(json_model::Dict{String,Any})
     # Substitute symbols for lead and lagged variables
     # Can drop this part once SymEngine has implemented derivatives of functions.
     # See https://github.com/symengine/SymEngine.jl/issues/53
-    dynamic_sub = copy(dynamic)
-    subLeadLagsInEqutaions!(dynamic_sub, dict_subs, merge(dynamic_endog_xrefs, dynamic_exog_xrefs))
+    subLeadLagsInEqutaions!(dynamic, dict_subs, merge(dynamic_endog_xrefs, dynamic_exog_xrefs))
 
     #
     # Statements
@@ -261,7 +258,7 @@ function parse_json(json_model::Dict{String,Any})
     get_numerical_initialization(end_val, json_model["statements"], "end_val")
 
     # Return
-    (parameters, endogenous, exogenous, exogenous_deterministic, equations_dynamic, equations_static, dynamic, static, dynamic_sub, dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs, dict_subs, param_init, init_val, end_val)
+    (parameters, endogenous, exogenous, exogenous_deterministic, equations_dynamic, equations_static, dynamic, static, dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs, dict_subs, param_init, init_val, end_val)
 end
 
 function subLeadLagsInEqutaions!(subeqs::Array{SymEngine.Basic, 1}, dict_subs::Dict{Any, String}, dict_lead_lag::DataStructures.OrderedDict{Any,Array{Int64}})
@@ -354,7 +351,7 @@ function compose_derivatives(model)
     col = 1
     for tup in model["dynamic_endog_xrefs"]
         for eq in tup[2]
-            deriv = SymEngine.diff(model["dynamic_sub"][eq], SymEngine.symbols(model["dict_subs"][tup[1]]))
+            deriv = SymEngine.diff(model["dynamic"][eq], SymEngine.symbols(model["dict_subs"][tup[1]]))
             if deriv != 0
                 I = [I; eq]
                 J = [J; col]
@@ -366,7 +363,7 @@ function compose_derivatives(model)
 
     for tup in model["dynamic_exog_xrefs"]
         for eq in tup[2]
-            deriv = SymEngine.diff(model["dynamic_sub"][eq], SymEngine.symbols(model["dict_subs"][tup[1]]))
+            deriv = SymEngine.diff(model["dynamic"][eq], SymEngine.symbols(model["dict_subs"][tup[1]]))
             if deriv != 0
                 I = [I; eq]
                 J = [J; col]
