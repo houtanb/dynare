@@ -152,7 +152,10 @@ function parse_json(json_model::Dict{String,Any})
     #
     # Model Equations
     #
-    equations_dynamic, dynamic = Array{Expr,1}(), Array{SymEngine.Basic, 1}()
+
+    #
+    # Equations in Expr form: equations_dynamic, equations_static
+    equations_dynamic = Array{Expr,1}()
     for e in json_model["model"]
         push!(equations_dynamic, parse_eq(e))
     end
@@ -162,13 +165,9 @@ function parse_json(json_model::Dict{String,Any})
         equations_static[idx] = tostatic([endogenous; exogenous; exogenous_deterministic], e)
         idx += 1
     end
-    static = Array{SymEngine.Basic,1}(length(equations_static))
-    idx = 1
-    for e in equations_static
-        static[idx] = SymEngine.Basic(e)
-        idx += 1
-    end
 
+    #
+    # Equations in SymEngine form: dynamic, static
     dict_subs = Dict{Any, String}()
     symengineKeywordPresent = false
     if !isempty(filter(x->x in endogenous, SymEngineKeywordAtoms)) ||
@@ -180,7 +179,10 @@ function parse_json(json_model::Dict{String,Any})
             dict_subs[(string(i), 0)] = string("___", string(i), "___")
         end
     end
-    for e in equations_dynamic
+
+    idx = 1
+    static = Array{SymEngine.Basic, 1}(length(equations_static))
+    for e in equations_static
         if symengineKeywordPresent
             # NB: SymEngine converts Basic("e") => E,
             #                    but Basic("e(-1)") => symbols("e(-1)")
@@ -188,10 +190,23 @@ function parse_json(json_model::Dict{String,Any})
             # To fix this, we substitute e at time t
             e = replaceSymEngineKeyword(e)
         end
-        push!(dynamic, SymEngine.Basic(e))
+        static[idx] = SymEngine.Basic(e)
+        idx += 1
     end
 
-    # Cross References
+    idx = 1
+    dynamic = Array{SymEngine.Basic, 1}(length(equations_dynamic))
+    for e in equations_dynamic
+        if symengineKeywordPresent
+            # NB: See explanation in conversion to static
+            e = replaceSymEngineKeyword(e)
+        end
+        dynamic[idx] = SymEngine.Basic(e)
+        idx += 1
+    end
+
+    #
+    # Equation Cross References
     dynamic_endog_xrefs = get_xrefs(json_model["xrefs"]["endogenous"])
     dynamic_exog_xrefs = get_xrefs(json_model["xrefs"]["exogenous"])
 
