@@ -348,28 +348,36 @@ function compose_derivatives(model)
     # Dynamic Jacobian
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
     col = 1
-    for tup in model["dynamic_endog_xrefs"]
-        for eq in tup[2][1]
-            deriv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
-            if deriv != 0
-                I = [I; eq]
-                J = [J; col]
-                V = [V; deriv]
+    for ae in [ filter((k,v)->k[2] == i, model["dynamic_endog_xrefs"]) for i = -1:1 ]
+        for i in 1:nendog
+            for tup in filter((k,v)-> k[1] == model["endogenous"][i], ae)
+                for eq in tup[2][1]
+                    deriv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
+                    if deriv != 0
+                        I = [I; eq]
+                        J = [J; col]
+                        V = [V; deriv]
+                    end
+                end
+                col += 1
             end
         end
-        col += 1
     end
 
-    for tup in model["dynamic_exog_xrefs"]
-        for eq in tup[2][1]
-            deriv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
-            if deriv != 0
-                I = [I; eq]
-                J = [J; col]
-                V = [V; deriv]
+    for ae in [ filter((k,v)->k[2] == i, model["dynamic_exog_xrefs"]) for i = -1:1 ]
+        for i in 1:length(model["dynamic_exog_xrefs"])
+            for tup in filter((k,v)-> k[1] == model["exogenous"][i], ae)
+                for eq in tup[2][1]
+                    deriv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
+                    if deriv != 0
+                        I = [I; eq]
+                        J = [J; col]
+                        V = [V; deriv]
+                    end
+                end
+                col += 1
             end
         end
-        col += 1
     end
     dynamicg1 = sparse(I, J, V, nendog, ndynvars)
 
