@@ -49,8 +49,10 @@ end
 importall Base.Operators
 ==(x::Atom, y::Atom) = x.name == y.name
 ==(x::String, y::Atom) = x == y.name
+==(x::Symbol, y::Atom) = string(x) == y
 .==(x::Atom, y::Array{Atom}) = [x == yi for yi in y]
 .==(x::String, y::Array{Atom}) = [x == yi for yi in y]
+.==(x::Symbol, y::Array{Atom}) = string(x) .== y
 
 immutable AuxVars
     endo_index::Int
