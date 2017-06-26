@@ -20,27 +20,27 @@ module DynareModel
 
 export Model, dynare_model
 
-abstract Atom
+abstract type Atom end
 
-immutable Endo <: Atom
+struct Endo <: Atom
     name::String
     tex_name::String
     long_name::String
 end
 
-immutable Exo <: Atom
+struct Exo <: Atom
     name::String
     tex_name::String
     long_name::String
 end
 
-immutable ExoDet <: Atom
+struct ExoDet <: Atom
     name::String
     tex_name::String
     long_name::String
 end
 
-immutable Param <: Atom
+struct Param <: Atom
     name::String
     tex_name::String
     long_name::String
@@ -50,11 +50,8 @@ importall Base.Operators
 ==(x::Atom, y::Atom) = x.name == y.name
 ==(x::String, y::Atom) = x == y.name
 ==(x::Symbol, y::Atom) = string(x) == y
-.==(x::Atom, y::Array{Atom}) = [x == yi for yi in y]
-.==(x::String, y::Array{Atom}) = [x == yi for yi in y]
-.==(x::Symbol, y::Array{Atom}) = string(x) .== y
 
-immutable AuxVars
+struct AuxVars
     endo_index::Int
     var_type::Int
     orig_index::Int
@@ -63,15 +60,15 @@ immutable AuxVars
     orig_expr::String
 end
 
-immutable PredVars
+struct PredVars
     index::Int
 end
 
-immutable ObsVars
+struct ObsVars
     index::Int
 end
 
-immutable DetShocks
+struct DetShocks
     exo_det::Int
     exo_id::Int
     multiplicative::Bool
@@ -79,13 +76,13 @@ immutable DetShocks
     value::Float64
 end
 
-immutable EquationTag
+struct EquationTag
     eq_nbr::Int
     name::String
     value::String
 end
 
-type Model
+mutable struct Model
     fname::String
     dname::String
     dynare_version::String

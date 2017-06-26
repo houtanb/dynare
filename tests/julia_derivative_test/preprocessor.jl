@@ -130,13 +130,13 @@ end
 function get_xrefs!(xrefs::Dict{Any, Any}, json::Array{Any, 1})
     for i in json
         if i["shift"] == 0
-            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]),
+            xrefs[(i["name"], i["shift"])] = (convert(Array{Int}, i["equations"]),
                                               SymEngine.symbols(i["name"]))
         elseif i["shift"] == -1
-            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]),
+            xrefs[(i["name"], i["shift"])] = (convert(Array{Int}, i["equations"]),
                                               SymEngine.symbols(string("___", i["name"], "m1___")))
         else
-            xrefs[(i["name"], i["shift"])] = (round(Int, i["equations"]),
+            xrefs[(i["name"], i["shift"])] = (convert(Array{Int}, i["equations"]),
                                               SymEngine.symbols(string("___", i["name"], "1___")))
         end
     end
