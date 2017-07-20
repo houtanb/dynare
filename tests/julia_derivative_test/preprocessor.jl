@@ -17,6 +17,7 @@ const nonDynareSymEngineKeyWordAtom = DynareModel.Endo(nonDynareSymEngineKeyWord
 # END NB
 
 type StaticG1 <: Functor{3} end
+type StaticG2 <: Functor{3} end
 
 function process(modfile::String)
     # Run Dynare preprocessor get JSON output
@@ -56,10 +57,12 @@ function process(modfile::String)
 
     # Calculate derivatives
     #    (staticg1, staticg1ref, staticg2, dynamicg1) = compose_derivatives(model)
-    staticg1ref = compose_derivatives(model)
+    (staticg1ref, staticg2ref, staticg11, staticg22) = compose_derivatives(model)
+    #(I,J,V,nendog) = compose_derivatives(model)
 
     # Return JSON and Julia representation of modfile
-    (json, model, StaticG1, staticg1ref)
+    (json, model, StaticG1, staticg1ref, StaticG2, staticg2ref, staticg11, staticg22)
+    #(json, model, StaticG1, StaticG2, I,J,V,nendog)
 end
 
 function run_preprocessor(modfile::String)
@@ -342,8 +345,8 @@ function compose_derivatives(model)
     params = [v.name for v in model["parameters"]]
 
     # Static Jacobian
+    staticg1ref = Dict{Tuple{Int64, String}, SymEngine.Basic}()
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
-    staticg1ref = Dict{Any, SymEngine.Basic}()
     for i = 1:nendog
         for eq in model["static_xrefs"][model["endogenous"][i].name]
             sederiv = SymEngine.diff(model["static"][eq],
@@ -356,37 +359,48 @@ function compose_derivatives(model)
             end
         end
     end
+    staticg11 = sparse(I, J, V, nendog, nendog)
     NumericFuns.evaluate(::StaticG1, endo::Array{Float64,1}, exo::Array{Float64,1}, param::Array{Float64,1}) = sparse(:($I), :($J), [eval(d) for d in :($V)], :($nendog), :($nendog))
-
-    return staticg1ref
+    #    return (I, J, V, nendog)
 
     # Static Hessian
+    staticg2ref = Dict{Tuple{Int64, String, String}, SymEngine.Basic}()
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
+    eqs = unique([ k[1] for k in keys(staticg1ref) ])
     for i = 1:nendog
-        for eq in staticg1ref.rowval[staticg1ref.colptr[i]:staticg1ref.colptr[i+1]-1]
-            # Diagonal
-            deriv = SymEngine.diff(staticg1ref[eq, i],
-                                   get_static_symbol(model["dynamic_endog_xrefs"], model["endogenous"][i].name))
-            if deriv != 0
-                I = [I; eq]
-                J = [J; (i-1)*nendog+i]
-                V = [V; deriv]
-            end
-            for j = i+1:nendog
-                # Off-diagonal
-                if any(eq .== model["static_xrefs"][model["endogenous"][j].name])
-                    deriv = SymEngine.diff(staticg1ref[eq, i],
-                                           get_static_symbol(model["dynamic_endog_xrefs"], model["endogenous"][j].name))
-                    if deriv != 0
-                        I = [I; eq; eq]
-                        J = [J; (i-1)*nendog+j; (j-1)*nendog+i]
-                        V = [V; deriv; deriv]
+        for eq in eqs
+            if haskey(staticg1ref, (eq, model["endogenous"][i].name))
+                # Diagonal
+                sederiv = SymEngine.diff(staticg1ref[eq, model["endogenous"][i].name],
+                                         get_static_symbol(model["dynamic_endog_xrefs"], model["endogenous"][i].name))
+                if sederiv != 0
+                    staticg2ref[(eq, model["endogenous"][i].name, model["endogenous"][i].name)] = sederiv
+                    I = [I; eq]
+                    J = [J; (i-1)*nendog+i]
+                    V = [V; replace_all_symengine_symbols(sederiv, endos, exos, params)]
+                end
+                for j = i+1:nendog
+                    if any(eq .== model["static_xrefs"][model["endogenous"][j].name])
+                        sederiv = SymEngine.diff(staticg1ref[eq, model["endogenous"][i].name],
+                                                 get_static_symbol(model["dynamic_endog_xrefs"], model["endogenous"][j].name))
+                        if sederiv != 0
+                            staticg2ref[(eq, model["endogenous"][i].name, model["endogenous"][j].name)] = sederiv
+                            staticg2ref[(eq, model["endogenous"][j].name, model["endogenous"][i].name)] = sederiv
+                            deriv = replace_all_symengine_symbols(sederiv, endos, exos, params)
+                            I = [I; eq; eq]
+                            J = [J; (i-1)*nendog+j; (j-1)*nendog+i]
+                            V = [V; deriv; deriv]
+                        end
                     end
                 end
             end
         end
     end
-    staticg2 = sparse(I, J, V, nendog, nendog^2)
+    staticg22 = sparse(I, J, V, nendog, nendog^2)
+
+    NumericFuns.evaluate(::StaticG2, endo::Array{Float64,1}, exo::Array{Float64,1}, param::Array{Float64,1}) = sparse(:($I), :($J), [eval(d) for d in :($V)], :($nendog), :($nendog)^2)
+
+    return staticg1ref, staticg2ref, staticg11, staticg22
 
     # Dynamic Jacobian
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
