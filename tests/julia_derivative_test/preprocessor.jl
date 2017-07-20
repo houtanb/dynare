@@ -1,6 +1,6 @@
 import JSON
 import SymEngine
-
+using NumericFuns
 
 # NB: SymEngine converts Basic("e") => E,
 #                    but Basic("e(-1)") => symbols("e(-1)")
@@ -15,6 +15,8 @@ const nonDynareSymEngineKeyWordSymbolSub = Symbol(nonDynareSymEngineKeyWordStrin
 const nonDynareSymEngineKeyWordSymEngineSymbolSub = SymEngine.symbols(nonDynareSymEngineKeyWordStringSub)
 const nonDynareSymEngineKeyWordAtom = DynareModel.Endo(nonDynareSymEngineKeyWordString, nonDynareSymEngineKeyWordString, nonDynareSymEngineKeyWordString)
 # END NB
+
+type StaticG1 <: Functor{3} end
 
 function process(modfile::String)
     # Run Dynare preprocessor get JSON output
@@ -54,10 +56,10 @@ function process(modfile::String)
 
     # Calculate derivatives
     #    (staticg1, staticg1ref, staticg2, dynamicg1) = compose_derivatives(model)
-    (staticg1, staticg1ref) = compose_derivatives(model)
+    staticg1ref = compose_derivatives(model)
 
     # Return JSON and Julia representation of modfile
-    (json, model, staticg1, staticg1ref)
+    (json, model, StaticG1, staticg1ref)
 end
 
 function run_preprocessor(modfile::String)
@@ -354,9 +356,9 @@ function compose_derivatives(model)
             end
         end
     end
-    staticg1 = sparse(I, J, V, nendog, nendog)
+    NumericFuns.evaluate(::StaticG1, endo::Array{Float64,1}, exo::Array{Float64,1}, param::Array{Float64,1}) = sparse(:($I), :($J), [eval(d) for d in :($V)], :($nendog), :($nendog))
 
-    return (staticg1, staticg1ref)
+    return staticg1ref
 
     # Static Hessian
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
