@@ -349,7 +349,7 @@ function compose_derivatives(model)
             sederiv = SymEngine.diff(model["static"][eq],
                                    get_static_symbol(model["dynamic_endog_xrefs"], model["endogenous"][i].name))
             if sederiv != 0
-                staticg1ref[(eq, i)] = sederiv
+                staticg1ref[(eq, model["endogenous"][i].name)] = sederiv
                 I = [I; eq]
                 J = [J; i]
                 V = [V; replace_all_symengine_symbols(sederiv, endos, exos, params)]
