@@ -143,7 +143,7 @@ function get_numerical_initialization!(d::OrderedDict{Symbol,Number}, a::Array{A
     end
 end
 
-function get_xrefs!(xrefs::Dict{Any, Any}, json::Array{Any, 1})
+function get_xrefs!(xrefs::Dict{Tuple{String,Int}, Tuple{Array{Int,1},SymEngine.Basic}}, json::Array{Any, 1})
     for i in json
         if i["shift"] == 0
             xrefs[(i["name"], i["shift"])] = (convert(Array{Int}, i["equations"]),
@@ -158,7 +158,7 @@ function get_xrefs!(xrefs::Dict{Any, Any}, json::Array{Any, 1})
     end
 end
 
-function create_reverse_lookup_dict!(reverse_lookup::Dict{SymEngine.Basic, String}, xrefs::Dict{Any, Any})
+function create_reverse_lookup_dict!(reverse_lookup::Dict{SymEngine.Basic, String}, xrefs::Dict{Tuple{String,Int}, Tuple{Array{Int,1},SymEngine.Basic}})
     for i in xrefs
         reverse_lookup[i[2][2]] = i[1][2] == 0 ? i[1][1] : string(i[1][1], "(", i[1][2], ")")
     end
@@ -196,7 +196,8 @@ function parse_json(json_model::Dict{String,Any})
 
     #
     # Equation Cross References
-    dynamic_endog_xrefs, dynamic_exog_xrefs = Dict(), Dict()
+    dynamic_endog_xrefs, dynamic_exog_xrefs =
+        Dict{Tuple{String,Int}, Tuple{Array{Int,1},SymEngine.Basic}}(), Dict{Tuple{String,Int}, Tuple{Array{Int,1},SymEngine.Basic}}()
     get_xrefs!(dynamic_endog_xrefs, json_model["xrefs"]["endogenous"])
     get_xrefs!(dynamic_exog_xrefs, json_model["xrefs"]["exogenous"])
 
@@ -306,7 +307,7 @@ function parse_json(json_model::Dict{String,Any})
 end
 
 function subLeadLagsInEqutaions!(subeqs::Array{SymEngine.Basic, 1},
-                                 dict_lead_lag::Dict{Any, Any})
+                                 dict_lead_lag::Dict{Tuple{String,Int}, Tuple{Array{Int,1},SymEngine.Basic}})
     for de in dict_lead_lag
         if (de[1][2] != 0)
             for i in de[2][1]
