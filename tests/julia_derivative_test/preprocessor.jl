@@ -270,6 +270,7 @@ function parse_json(json_model::Dict{String,Any})
         end
     end
 
+    idx = 1
     lead_lag_incidence_exo_string = Dict{String, Int}()
     lead_lag_incidence_exo = zeros(Int64, 3, length(exogenous))
     for lag in -1:1
