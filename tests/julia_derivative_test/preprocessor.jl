@@ -57,12 +57,10 @@ function process(modfile::String)
 
     # Calculate derivatives
     #    (staticg1, staticg1ref, staticg2, dynamicg1) = compose_derivatives(model)
-    (staticg1ref, staticg2ref, staticg11, staticg22) = compose_derivatives(model)
-    #(I,J,V,nendog) = compose_derivatives(model)
+    (staticg1ref, staticg2ref) = compose_derivatives(model)
 
     # Return JSON and Julia representation of modfile
-    (json, model, StaticG1, staticg1ref, StaticG2, staticg2ref, staticg11, staticg22)
-    #(json, model, StaticG1, StaticG2, I,J,V,nendog)
+    (json, model, StaticG1, staticg1ref, StaticG2, staticg2ref)
 end
 
 function run_preprocessor(modfile::String)
@@ -359,9 +357,7 @@ function compose_derivatives(model)
             end
         end
     end
-    staticg11 = sparse(I, J, V, nendog, nendog)
     NumericFuns.evaluate(::StaticG1, endo::Array{Float64,1}, exo::Array{Float64,1}, param::Array{Float64,1}) = sparse(:($I), :($J), [eval(d) for d in :($V)], :($nendog), :($nendog))
-    #    return (I, J, V, nendog)
 
     # Static Hessian
     staticg2ref = Dict{Tuple{Int64, String, String}, SymEngine.Basic}()
@@ -396,11 +392,9 @@ function compose_derivatives(model)
             end
         end
     end
-    staticg22 = sparse(I, J, V, nendog, nendog^2)
-
     NumericFuns.evaluate(::StaticG2, endo::Array{Float64,1}, exo::Array{Float64,1}, param::Array{Float64,1}) = sparse(:($I), :($J), [eval(d) for d in :($V)], :($nendog), :($nendog)^2)
 
-    return staticg1ref, staticg2ref, staticg11, staticg22
+    return staticg1ref, staticg2ref
 
     # Dynamic Jacobian
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
