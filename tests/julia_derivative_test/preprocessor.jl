@@ -25,7 +25,7 @@ function process(modfile::String)
     json = run_preprocessor(modfile)
 
     # Parse JSON output into Julia representation
-    model = OrderedDict{String, Any}()
+    model = Dict{String, Any}()
     (model["parameters"],
      model["endogenous"],
      model["exogenous"],
@@ -80,9 +80,9 @@ function run_preprocessor(modfile::String)
     run(`$dynare_m $modfile.mod json=transform onlyjson`)
 
     json = open("$modfile.json")
-    modfile = JSON.parse(readstring(json))
+    jsonout = JSON.parse(readstring(json))
     close(json)
-    return modfile
+    return jsonout
 end
 
 function get_vars!(d::Array{DynareModel.Endo,1}, json::Array{Any,1})
@@ -183,9 +183,11 @@ function parse_json(json_model::Dict{String,Any})
 
     #
     # Equations in Expr form: equations_dynamic, equations_static
-    equations_dynamic = Array{Expr,1}()
+    idx = 1
+    equations_dynamic = Array{Expr, 1}(length(json_model["model"]))
     for e in json_model["model"]
-        push!(equations_dynamic, parse_eq(e))
+        equations_dynamic[idx] = parse_eq(e)
+        idx += 1
     end
     equations_static = Array{Expr,1}(length(equations_dynamic))
     idx = 1
@@ -201,7 +203,7 @@ function parse_json(json_model::Dict{String,Any})
     get_xrefs!(dynamic_endog_xrefs, json_model["xrefs"]["endogenous"])
     get_xrefs!(dynamic_exog_xrefs, json_model["xrefs"]["exogenous"])
 
-    static_xrefs = Dict{Any, Array{Int}}()
+    static_xrefs = Dict{String, Array{Int}}()
     for i in dynamic_endog_xrefs
         if haskey(static_xrefs, i[1][1])
             static_xrefs[i[1][1]] = union(static_xrefs[i[1][1]], i[2][1])
