@@ -18,6 +18,7 @@ const nonDynareSymEngineKeyWordAtom = DynareModel.Endo(nonDynareSymEngineKeyWord
 
 type StaticG1 <: Functor{3} end
 type StaticG2 <: Functor{3} end
+type DynamicG1 <: Functor{3} end
 
 function process(modfile::String)
     # Run Dynare preprocessor get JSON output
@@ -36,6 +37,12 @@ function process(modfile::String)
      model["dynamic_endog_xrefs"],
      model["dynamic_exog_xrefs"],
      model["static_xrefs"],
+     model["dynamic_endog_reverse_lookup"],
+     model["dynamic_exog_reverse_lookup"],
+     model["lead_lag_incidence"],
+     model["lead_lag_incidence_string"],
+     model["lead_lag_incidence_exo"],
+     model["lead_lag_incidence_exo_string"],
      model["param_init"],
      model["init_val"],
      model["end_val"]) = parse_json(json)
@@ -51,16 +58,21 @@ function process(modfile::String)
            model["dynamic_endog_xrefs"],
            model["dynamic_exog_xrefs"],
            model["static_xrefs"],
+           model["dynamic_endog_reverse_lookup"],
+           model["dynamic_exog_reverse_lookup"],
+           model["lead_lag_incidence"],
+           model["lead_lag_incidence_string"],
+           model["lead_lag_incidence_exo"],
+           model["lead_lag_incidence_exo_string"],
            model["param_init"],
            model["init_val"],
            model["end_val"]) = parse_json(json)
 
     # Calculate derivatives
-    #    (staticg1, staticg1ref, staticg2, dynamicg1) = compose_derivatives(model)
-    (staticg1ref, staticg2ref) = compose_derivatives(model)
+    (staticg1ref, staticg2ref, dynamicg1ref) = compose_derivatives(model)
 
     # Return JSON and Julia representation of modfile
-    (json, model, StaticG1, staticg1ref, StaticG2, staticg2ref)
+    (json, model, StaticG1, staticg1ref, StaticG2, staticg2ref, DynamicG1, dynamicg1ref)
 end
 
 function run_preprocessor(modfile::String)
@@ -146,6 +158,12 @@ function get_xrefs!(xrefs::Dict{Any, Any}, json::Array{Any, 1})
     end
 end
 
+function create_reverse_lookup_dict!(reverse_lookup::Dict{SymEngine.Basic, String}, xrefs::Dict{Any, Any})
+    for i in xrefs
+        reverse_lookup[i[2][2]] = i[1][2] == 0 ? i[1][1] : string(i[1][1], "(", i[1][2], ")")
+    end
+end
+
 function parse_json(json_model::Dict{String,Any})
     # Model variables, parameters
     parameters, endogenous, exogenous, exogenous_deterministic =
@@ -206,6 +224,10 @@ function parse_json(json_model::Dict{String,Any})
         nonDynareSymEngineKeywordPresent = true
     end
 
+    dynamic_endog_reverse_lookup, dynamic_exog_reverse_lookup = Dict{SymEngine.Basic, String}(), Dict{SymEngine.Basic, String}()
+    create_reverse_lookup_dict!(dynamic_endog_reverse_lookup, dynamic_endog_xrefs)
+    create_reverse_lookup_dict!(dynamic_exog_reverse_lookup, dynamic_exog_xrefs)
+
     idx = 1
     static = Array{SymEngine.Basic, 1}(length(equations_static))
     for e in equations_static
@@ -231,6 +253,32 @@ function parse_json(json_model::Dict{String,Any})
     # See https://github.com/symengine/SymEngine.jl/issues/53
     subLeadLagsInEqutaions!(dynamic, merge(dynamic_endog_xrefs, dynamic_exog_xrefs))
 
+    # Lead Lag Incidence
+    idx = 1
+    lead_lag_incidence_string = Dict{String, Int}()
+    lead_lag_incidence = zeros(Int64, 3, length(endogenous))
+    for lag in -1:1
+        for i = 1:length(endogenous)
+            if haskey(dynamic_endog_xrefs, (endogenous[i].name, lag))
+                lead_lag_incidence_string[SymEngine.toString(dynamic_endog_xrefs[(endogenous[i].name, lag)][2])] = idx
+                lead_lag_incidence[2+lag, i] = idx
+                idx += 1
+            end
+        end
+    end
+
+    lead_lag_incidence_exo_string = Dict{String, Int}()
+    lead_lag_incidence_exo = zeros(Int64, 3, length(exogenous))
+    for lag in -1:1
+        for i = 1:length(exogenous)
+            if haskey(dynamic_endog_xrefs, (endogenous[i].name, lag))
+                lead_lag_incidence_exo_string[SymEngine.toString(dynamic_endog_xrefs[(endogenous[i].name, lag)][2])] = idx
+                lead_lag_incidence_exo[2+lag, i] = idx
+                idx += 1
+            end
+        end
+    end
+
     #
     # Statements
     #
@@ -251,6 +299,9 @@ function parse_json(json_model::Dict{String,Any})
      equations_dynamic, equations_static,
      dynamic, static,
      dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs,
+     dynamic_endog_reverse_lookup, dynamic_exog_reverse_lookup,
+     lead_lag_incidence, lead_lag_incidence_string,
+     lead_lag_incidence_exo, lead_lag_incidence_exo_string,
      param_init, init_val, end_val)
 end
 
@@ -315,32 +366,53 @@ replace_symengine_symbols(expr::Symbol, symb, value) = replace_symengine_symbols
 replace_symengine_symbols(expr::Expr, symb, value) = replace_symengine_symbols!(copy(expr), symb, value)
 replace_symengine_symbols(expr::SymEngine.Basic, symb, value) = replace_symengine_symbols!(parse(SymEngine.toString(expr)), symb, value)
 
-function replace_all_symengine_symbols(expr, endos, exos, params)
-    i = 1
-    for endo in endos
-        expr = replace_symengine_symbols(expr, endo, :(endo[$i]))
-        i = i + 1
+function replace_all_symengine_symbols(expr, endos::Dict{String, Int}, exos::Dict{String, Int}, params::Dict{String, Int})
+    for (k, v) in endos
+        expr = replace_symengine_symbols(expr, k, :(endo[$v]))
     end
-    i = 1
-    for exo in exos
-        expr = replace_symengine_symbols(expr, exo, :(exo[$i]))
-        i = i + 1
+
+    for (k, v) in exos
+        expr = replace_symengine_symbols(expr, k, :(exo[$v]))
     end
-    i = 1
-    for param in params
-        expr = replace_symengine_symbols(expr, param, :(param[$i]))
-        i = i + 1
+
+    for (k, v) in params
+        expr = replace_symengine_symbols(expr, k, :(param[$v]))
     end
     expr
+end
+
+function create_var_map!(varmap::Dict{String,Int}, vars::Array{DynareModel.Endo, 1})
+    idx = 1
+    for i in vars
+        varmap[i.name] = idx
+        idx += 1
+    end
+end
+
+function create_var_map!(varmap::Dict{String,Int}, vars::Array{DynareModel.Exo, 1})
+    idx = 1
+    for i in vars
+        varmap[i.name] = idx
+        idx += 1
+    end
+end
+
+function create_var_map!(varmap::Dict{String,Int}, vars::Array{DynareModel.Param, 1})
+    idx = 1
+    for i in vars
+        varmap[i.name] = idx
+        idx += 1
+    end
 end
 
 function compose_derivatives(model)
     nendog = length(model["endogenous"])
     ndynvars = length(model["dynamic_endog_xrefs"]) + length(model["dynamic_exog_xrefs"])
 
-    endos = [v.name for v in model["endogenous"]]
-    exos = [v.name for v in model["exogenous"]]
-    params = [v.name for v in model["parameters"]]
+    endos, exos, params = Dict{String, Int}(), Dict{String, Int}(), Dict{String, Int}()
+    create_var_map!(endos, model["endogenous"])
+    create_var_map!(exos, model["exogenous"])
+    create_var_map!(params, model["parameters"])
 
     # Static Jacobian
     staticg1ref = Dict{Tuple{Int64, String}, SymEngine.Basic}()
@@ -357,7 +429,9 @@ function compose_derivatives(model)
             end
         end
     end
-    NumericFuns.evaluate(::StaticG1, endo::Array{Float64,1}, exo::Array{Float64,1}, param::Array{Float64,1}) = sparse(:($I), :($J), [eval(d) for d in :($V)], :($nendog), :($nendog))
+    staticg11 = sparse(I,J,V,nendog,nendog)
+    NumericFuns.evaluate(::StaticG1, endo::Array{Float64,1}, exo::Array{Float64,1}, param::Array{Float64,1}) =
+        sparse(:($I), :($J), [eval(d) for d in :($V)], :($nendog), :($nendog))
 
     # Static Hessian
     staticg2ref = Dict{Tuple{Int64, String, String}, SymEngine.Basic}()
@@ -392,22 +466,25 @@ function compose_derivatives(model)
             end
         end
     end
-    NumericFuns.evaluate(::StaticG2, endo::Array{Float64,1}, exo::Array{Float64,1}, param::Array{Float64,1}) = sparse(:($I), :($J), [eval(d) for d in :($V)], :($nendog), :($nendog)^2)
-
-    return staticg1ref, staticg2ref
+    NumericFuns.evaluate(::StaticG2, endo::Array{Float64,1}, exo::Array{Float64,1}, param::Array{Float64,1}) =
+        sparse(:($I), :($J), [eval(d) for d in :($V)], :($nendog), :($nendog)^2)
 
     # Dynamic Jacobian
-    I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
     col = 1
+    dynamicg1ref = Dict{Tuple{Int64, String}, SymEngine.Basic}()
+    I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
+    endos = model["lead_lag_incidence_string"]
+    exos = model["lead_lag_incidence_exo_string"]
     for ae in [ filter((k,v)->k[2] == i, model["dynamic_endog_xrefs"]) for i = -1:1 ]
         for i in 1:nendog
             for tup in filter((k,v)-> k[1] == model["endogenous"][i], ae)
                 for eq in tup[2][1]
-                    deriv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
-                    if deriv != 0
+                    sederiv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
+                    if sederiv != 0
+                        dynamicg1ref[(eq, model["dynamic_endog_reverse_lookup"][tup[2][2]])] = sederiv
                         I = [I; eq]
                         J = [J; col]
-                        V = [V; deriv]
+                        V = [V; replace_all_symengine_symbols(sederiv, endos, exos, params)]
                     end
                 end
                 col += 1
@@ -419,18 +496,20 @@ function compose_derivatives(model)
         for i in 1:length(model["dynamic_exog_xrefs"])
             for tup in filter((k,v)-> k[1] == model["exogenous"][i], ae)
                 for eq in tup[2][1]
-                    deriv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
-                    if deriv != 0
+                    sederiv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
+                    if sederiv != 0
+                        dynamicg1ref[(eq, model["dynamic_exog_reverse_lookup"][tup[2][2]])] = sederiv
                         I = [I; eq]
                         J = [J; col]
-                        V = [V; deriv]
+                        V = [V; replace_all_symengine_symbols(sederiv, endos, exos, params)]
                     end
                 end
                 col += 1
             end
         end
     end
-    dynamicg1 = sparse(I, J, V, nendog, ndynvars)
+    NumericFuns.evaluate(::DynamicG1, endo::Array{Float64,1}, exo::Array{Float64,1}, param::Array{Float64,1}) =
+        sparse(:($I), :($J), [eval(d) for d in :($V)], :($nendog), :($ndynvars))
 
-    (staticg1, staticg1ref, staticg2, dynamicg1)
+    (staticg1ref, staticg2ref, dynamicg1ref)
 end
