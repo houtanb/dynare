@@ -85,34 +85,10 @@ function run_preprocessor(modfile::String)
     return jsonout
 end
 
-function get_vars!(d::Array{DynareModel.Endo,1}, json::Array{Any,1})
+function get_vars!(d::Array{T,1}, json::Array{Any,1}) where {T <: DynareModel.Atom}
     idx = 1
     for i in json
-        d[idx] = DynareModel.Endo(i["name"]::String, i["texName"]::String, i["longName"]::String)
-        idx += 1
-    end
-end
-
-function get_vars!(d::Array{DynareModel.Exo,1}, json::Array{Any,1})
-    idx = 1
-    for i in json
-        d[idx] = DynareModel.Exo(i["name"]::String, i["texName"]::String, i["longName"]::String)
-        idx += 1
-    end
-end
-
-function get_vars!(d::Array{DynareModel.Param,1}, json::Array{Any,1})
-    idx = 1
-    for i in json
-        d[idx] = DynareModel.Param(i["name"]::String, i["texName"]::String, i["longName"]::String)
-        idx += 1
-    end
-end
-
-function get_vars!(d::Array{DynareModel.ExoDet,1}, json::Array{Any,1})
-    idx = 1
-    for i in json
-        d[idx] = DynareModel.ExoDet(i["name"]::String, i["texName"]::String, i["longName"]::String)
+        d[idx] = T(i["name"]::String, i["texName"]::String, i["longName"]::String)
         idx += 1
     end
 end
