@@ -40,9 +40,9 @@ function process(modfile::String)
      model["dynamic_endog_reverse_lookup"],
      model["dynamic_exog_reverse_lookup"],
      model["lead_lag_incidence"],
-     model["lead_lag_incidence_string"],
+     model["lead_lag_incidence_ref"],
      model["lead_lag_incidence_exo"],
-     model["lead_lag_incidence_exo_string"],
+     model["lead_lag_incidence_exo_ref"],
      model["param_init"],
      model["init_val"],
      model["end_val"]) = parse_json(json)
@@ -61,9 +61,9 @@ function process(modfile::String)
            model["dynamic_endog_reverse_lookup"],
            model["dynamic_exog_reverse_lookup"],
            model["lead_lag_incidence"],
-           model["lead_lag_incidence_string"],
+           model["lead_lag_incidence_ref"],
            model["lead_lag_incidence_exo"],
-           model["lead_lag_incidence_exo_string"],
+           model["lead_lag_incidence_exo_ref"],
            model["param_init"],
            model["init_val"],
            model["end_val"]) = parse_json(json)
@@ -258,12 +258,12 @@ function parse_json(json_model::Dict{String,Any})
 
     # Lead Lag Incidence
     idx = 1
-    lead_lag_incidence_string = Dict{String, Int}()
+    lead_lag_incidence_ref = Dict{String, Int}()
     lead_lag_incidence = zeros(Int64, 3, length(endogenous))
     for lag in -1:1
         for i = 1:length(endogenous)
             if haskey(dynamic_endog_xrefs, (endogenous[i].name, lag))
-                lead_lag_incidence_string[SymEngine.toString(dynamic_endog_xrefs[(endogenous[i].name, lag)][2])] = idx
+                lead_lag_incidence_ref[SymEngine.toString(dynamic_endog_xrefs[(endogenous[i].name, lag)][2])] = idx
                 lead_lag_incidence[2+lag, i] = idx
                 idx += 1
             end
@@ -271,12 +271,12 @@ function parse_json(json_model::Dict{String,Any})
     end
 
     idx = 1
-    lead_lag_incidence_exo_string = Dict{String, Int}()
+    lead_lag_incidence_exo_ref = Dict{String, Int}()
     lead_lag_incidence_exo = zeros(Int64, 3, length(exogenous))
     for lag in -1:1
         for i = 1:length(exogenous)
             if haskey(dynamic_exog_xrefs, (exogenous[i].name, lag))
-                lead_lag_incidence_exo_string[SymEngine.toString(dynamic_exog_xrefs[(exogenous[i].name, lag)][2])] = idx
+                lead_lag_incidence_exo_ref[SymEngine.toString(dynamic_exog_xrefs[(exogenous[i].name, lag)][2])] = idx
                 lead_lag_incidence_exo[2+lag, i] = idx
                 idx += 1
             end
@@ -304,8 +304,8 @@ function parse_json(json_model::Dict{String,Any})
      dynamic, static,
      dynamic_endog_xrefs, dynamic_exog_xrefs, static_xrefs,
      dynamic_endog_reverse_lookup, dynamic_exog_reverse_lookup,
-     lead_lag_incidence, lead_lag_incidence_string,
-     lead_lag_incidence_exo, lead_lag_incidence_exo_string,
+     lead_lag_incidence, lead_lag_incidence_ref,
+     lead_lag_incidence_exo, lead_lag_incidence_exo_ref,
      param_init, init_val, end_val)
 end
 
@@ -477,8 +477,8 @@ function compose_derivatives(model)
     col = 1
     dynamicg1ref = Dict{Tuple{Int64, String}, SymEngine.Basic}()
     I, J, V = Array{Int,1}(), Array{Int,1}(), Array{SymEngine.Basic,1}()
-    endos = model["lead_lag_incidence_string"]
-    exos = model["lead_lag_incidence_exo_string"]
+    endos = model["lead_lag_incidence_ref"]
+    exos = model["lead_lag_incidence_exo_ref"]
     for ae in [ filter((k,v)->k[2] == i, model["dynamic_endog_xrefs"]) for i = -1:1 ]
         for i in 1:nendog
             for tup in filter((k,v)-> k[1] == model["endogenous"][i], ae)
