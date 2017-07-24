@@ -275,8 +275,8 @@ function parse_json(json_model::Dict{String,Any})
     lead_lag_incidence_exo = zeros(Int64, 3, length(exogenous))
     for lag in -1:1
         for i = 1:length(exogenous)
-            if haskey(dynamic_endog_xrefs, (endogenous[i].name, lag))
-                lead_lag_incidence_exo_string[SymEngine.toString(dynamic_endog_xrefs[(endogenous[i].name, lag)][2])] = idx
+            if haskey(dynamic_exog_xrefs, (exogenous[i].name, lag))
+                lead_lag_incidence_exo_string[SymEngine.toString(dynamic_exog_xrefs[(exogenous[i].name, lag)][2])] = idx
                 lead_lag_incidence_exo[2+lag, i] = idx
                 idx += 1
             end
