@@ -257,31 +257,10 @@ function parse_json(json_model::Dict{String,Any})
     subLeadLagsInEqutaions!(dynamic, merge(dynamic_endog_xrefs, dynamic_exog_xrefs))
 
     # Lead Lag Incidence
-    idx = 1
-    lead_lag_incidence_ref = Dict{String, Int}()
-    lead_lag_incidence = zeros(Int64, 3, length(endogenous))
-    for lag in -1:1
-        for i = 1:length(endogenous)
-            if haskey(dynamic_endog_xrefs, (endogenous[i].name, lag))
-                lead_lag_incidence_ref[SymEngine.toString(dynamic_endog_xrefs[(endogenous[i].name, lag)][2])] = idx
-                lead_lag_incidence[2+lag, i] = idx
-                idx += 1
-            end
-        end
-    end
-
-    idx = 1
-    lead_lag_incidence_exo_ref = Dict{String, Int}()
-    lead_lag_incidence_exo = zeros(Int64, 3, length(exogenous))
-    for lag in -1:1
-        for i = 1:length(exogenous)
-            if haskey(dynamic_exog_xrefs, (exogenous[i].name, lag))
-                lead_lag_incidence_exo_ref[SymEngine.toString(dynamic_exog_xrefs[(exogenous[i].name, lag)][2])] = idx
-                lead_lag_incidence_exo[2+lag, i] = idx
-                idx += 1
-            end
-        end
-    end
+    lead_lag_incidence_ref, lead_lag_incidence_exo_ref = Dict{String, Int}(), Dict{String, Int}()
+    lead_lag_incidence, lead_lag_incidence_exo = zeros(Int64, 3, length(endogenous)), zeros(Int64, 3, length(exogenous))
+    create_lead_lag_incidence!(lead_lag_incidence, lead_lag_incidence_ref, endogenous, dynamic_endog_xrefs)
+    create_lead_lag_incidence!(lead_lag_incidence_exo, lead_lag_incidence_exo_ref, exogenous, dynamic_exog_xrefs)
 
     #
     # Statements
@@ -307,6 +286,19 @@ function parse_json(json_model::Dict{String,Any})
      lead_lag_incidence, lead_lag_incidence_ref,
      lead_lag_incidence_exo, lead_lag_incidence_exo_ref,
      param_init, init_val, end_val)
+end
+
+function create_lead_lag_incidence!(lli::Array{Int64,2}, lliref::Dict{String, Int}, vars::Array{T,1}, var_xrefs::Dict{Tuple{String,Int}, Tuple{Array{Int,1},SymEngine.Basic}}) where {T <: DynareModel.Atom}
+    idx = 1
+    for lag in -1:1
+        for i = 1:length(vars)
+            if haskey(var_xrefs, (vars[i].name, lag))
+                lliref[SymEngine.toString(var_xrefs[(vars[i].name, lag)][2])] = idx
+                lli[2+lag, i] = idx
+                idx += 1
+            end
+        end
+    end
 end
 
 function subLeadLagsInEqutaions!(subeqs::Array{SymEngine.Basic, 1},
