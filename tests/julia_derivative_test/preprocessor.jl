@@ -350,23 +350,7 @@ function replace_all_symengine_symbols(expr, endos::Dict{String, Int}, exos::Dic
     expr
 end
 
-function create_var_map!(varmap::Dict{String,Int}, vars::Array{DynareModel.Endo, 1})
-    idx = 1
-    for i in vars
-        varmap[i.name] = idx
-        idx += 1
-    end
-end
-
-function create_var_map!(varmap::Dict{String,Int}, vars::Array{DynareModel.Exo, 1})
-    idx = 1
-    for i in vars
-        varmap[i.name] = idx
-        idx += 1
-    end
-end
-
-function create_var_map!(varmap::Dict{String,Int}, vars::Array{DynareModel.Param, 1})
+function create_var_map!(varmap::Dict{String,Int}, vars::Array{T, 1}) where {T <: DynareModel.Atom}
     idx = 1
     for i in vars
         varmap[i.name] = idx
