@@ -64,12 +64,10 @@ function process(modfile::String)
            model["end_val"]) = parse_json(json)
 
     # Calculate derivatives
-    #    (staticg1ref, staticg2ref, dynamicg1ref) = compose_derivatives(model)
-    (StaticG1, StaticG2, DynamicG1) = compose_derivatives(model)
+    (StaticG1, staticg1ref, StaticG2, staticg2ref, DynamicG1, dynamicg1ref) = compose_derivatives(model)
 
     # Return JSON and Julia representation of modfile
-    #    (json, model, StaticG1, staticg1ref, StaticG2, staticg2ref, DynamicG1, dynamicg1ref)
-    (json, model, StaticG1, StaticG2, DynamicG1)
+    (json, model, StaticG1, staticg1ref, StaticG2, staticg2ref, DynamicG1, dynamicg1ref)
 end
 
 function run_preprocessor(modfile::String)
@@ -463,5 +461,5 @@ function compose_derivatives(model)
     V = parse(V * "]")
     DynamicG1 = @eval (endo, exo, param) -> sparse($I, $J, $V, $nendog, $ndynvars)
 
-    (StaticG1, StaticG2, DynamicG1)
+    (StaticG1, staticg1ref, StaticG2, staticg2ref, DynamicG1, dynamicg1ref)
 end
