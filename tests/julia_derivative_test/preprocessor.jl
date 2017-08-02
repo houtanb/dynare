@@ -282,7 +282,7 @@ end
 function subLeadLagsInEqutaions!(subeqs::Array{SymEngine.Basic, 1},
                                  dict_lead_lag::Dict{Tuple{String,Int}, Tuple{Array{Int,1},SymEngine.Basic}})
     for de in dict_lead_lag
-        if (de[1][2] != 0)
+        if de[1][2] != 0
             for i in de[2][1]
                 subeqs[i] = SymEngine.subs(subeqs[i],
                                            SymEngine.Basic(string(de[1][1], "(", de[1][2], ")")),
