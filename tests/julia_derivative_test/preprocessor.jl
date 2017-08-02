@@ -394,11 +394,9 @@ function compose_derivatives(model)
     # Static Hessian
     staticg2ref = Dict{Tuple{Int64, String, String}, SymEngine.Basic}()
     I, J, V = Array{Int,1}(), Array{Int,1}(), String("[")
-    eqs = unique([ k[1] for k in keys(staticg1ref) ])
     for i = 1:nendog
-        for eq in eqs
+        for eq in model["static_xrefs"][model["endogenous"][i].name]
             if haskey(staticg1ref, (eq, model["endogenous"][i].name))
-                # Diagonal
                 sederiv = SymEngine.diff(staticg1ref[eq, model["endogenous"][i].name],
                                          get_static_symbol(model["dynamic_endog_xrefs"], model["endogenous"][i].name))
                 if sederiv != 0
