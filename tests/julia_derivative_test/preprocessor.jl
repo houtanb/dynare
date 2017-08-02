@@ -64,10 +64,17 @@ function process(modfile::String)
            model["end_val"]) = parse_json(json)
 
     # Calculate derivatives
-    (StaticG1, staticg1ref, StaticG2, staticg2ref, DynamicG1, dynamicg1ref) = compose_derivatives(model)
+    (StaticG1, staticg1ref,
+     StaticG2, staticg2ref,
+     DynamicG1, dynamicg1ref,
+     DynamicG2, dynamicg2ref) = compose_derivatives(model)
 
     # Return JSON and Julia representation of modfile
-    (json, model, StaticG1, staticg1ref, StaticG2, staticg2ref, DynamicG1, dynamicg1ref)
+    (json, model,
+     StaticG1, staticg1ref,
+     StaticG2, staticg2ref,
+     DynamicG1, dynamicg1ref,
+     DynamicG2, dynamicg2ref)
 end
 
 function run_preprocessor(modfile::String)
@@ -358,7 +365,8 @@ end
 
 function compose_derivatives(model)
     nendog = length(model["endogenous"])
-    ndynvars = length(model["dynamic_endog_xrefs"]) + length(model["dynamic_exog_xrefs"])
+    ndynendogvars = length(model["dynamic_endog_xrefs"])
+    ndynvars = ndynendogvars + length(model["dynamic_exog_xrefs"])
 
     endos, exos, params = Dict{String, Int}(), Dict{String, Int}(), Dict{String, Int}()
     create_var_map!(endos, model["endogenous"])
@@ -425,9 +433,11 @@ function compose_derivatives(model)
     I, J, V = Array{Int,1}(), Array{Int,1}(), String("[")
     endos = model["lead_lag_incidence_ref"]
     exos = model["lead_lag_incidence_exo_ref"]
+    deriv_id_table = OrderedDict{Tuple{String, Int64}, Int}()
     for ae in [ filter((k,v)->k[2] == i, model["dynamic_endog_xrefs"]) for i = -1:1 ]
         for i in 1:nendog
             for tup in filter((k,v)-> k[1] == model["endogenous"][i], ae)
+                deriv_id_table[tup[1]] = col
                 for eq in tup[2][1]
                     sederiv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
                     if sederiv != 0
@@ -445,6 +455,7 @@ function compose_derivatives(model)
     for ae in [ filter((k,v)->k[2] == i, model["dynamic_exog_xrefs"]) for i = -1:1 ]
         for i in 1:length(model["dynamic_exog_xrefs"])
             for tup in filter((k,v)-> k[1] == model["exogenous"][i], ae)
+                deriv_id_table[tup[1]] = col
                 for eq in tup[2][1]
                     sederiv = SymEngine.diff(model["dynamic"][eq], tup[2][2])
                     if sederiv != 0
@@ -461,5 +472,62 @@ function compose_derivatives(model)
     V = parse(V * "]")
     DynamicG1 = @eval (endo, exo, param) -> sparse($I, $J, $V, $nendog, $ndynvars)
 
-    (StaticG1, staticg1ref, StaticG2, staticg2ref, DynamicG1, dynamicg1ref)
+    # Dynamic Hessian
+    dynamicg2ref = Dict{Tuple{Int64, String, String}, SymEngine.Basic}()
+    I, J, V = Array{Int,1}(), Array{Int,1}(), String("[")
+    visited = Dict{Tuple{String, Int64}, Int}()
+    for dynvar in deriv_id_table
+        visited[dynvar[1]] = dynvar[2]
+        eqs = Array{Int64,1}()
+        dynvar_str, dynvar_syme = String, SymEngine.Basic
+        try
+            (eqs, dynvar_syme) = model["dynamic_endog_xrefs"][dynvar[1]]
+            dynvar_str = model["dynamic_endog_reverse_lookup"][dynvar_syme]
+        catch
+            (eqs, dynvar_syme) = model["dynamic_exog_xrefs"][dynvar[1]]
+            dynvar_str = model["dynamic_exog_reverse_lookup"][dynvar_syme]
+        end
+        for eq in eqs
+            if haskey(dynamicg1ref, (eq, dynvar_str))
+                deriv_syme = SymEngine.diff(dynamicg1ref[eq, dynvar_str], dynvar_syme)
+                if deriv_syme != 0
+                    col = (dynvar[2]-1) * ndynvars + dynvar[2]
+                    dynamicg2ref[(eq, dynvar_str, dynvar_str)] = deriv_syme
+                    I = [I; eq]
+                    J = [J; col]
+                    V *= (V == "[" ? "" : ";") * string(replace_all_symengine_symbols(deriv_syme, endos, exos, params))
+                end
+                for dynvar1 in setdiff(deriv_id_table, visited)
+                    eqs1 = Array{Int64,1}()
+                    dynvar_str1, dynvar_syme1 = String, SymEngine.Basic
+                    try
+                        (eqs1, dynvar_syme1) = model["dynamic_endog_xrefs"][dynvar1[1]]
+                        dynvar_str1 = model["dynamic_endog_reverse_lookup"][dynvar_syme1]
+                    catch
+                        (eqs1, dynvar_syme1) = model["dynamic_exog_xrefs"][dynvar1[1]]
+                        dynvar_str1 = model["dynamic_exog_reverse_lookup"][dynvar_syme1]
+                    end
+                    deriv_syme = SymEngine.diff(dynamicg1ref[eq, dynvar_str], dynvar_syme1)
+                    if deriv_syme != 0
+                        id1 = dynvar[2]
+                        id2 = dynvar1[2]
+                        col = (id1-1) * ndynvars + id2
+                        col_sym = (id2-1) * ndynvars + id1
+                        dynamicg2ref[(eq, dynvar_str, dynvar_str1)] = deriv_syme
+                        dynamicg2ref[(eq, dynvar_str1, dynvar_str)] = deriv_syme
+                        deriv = string(replace_all_symengine_symbols(deriv_syme, endos, exos, params))
+                        I = [I; eq; eq]
+                        J = [J; col; col_sym]
+                        V *= (V == "[" ? "" : ";") * deriv * ";" * deriv
+                    end
+                end
+            end
+        end
+    end
+    V = parse(V * "]")
+    DynamicG2 = @eval (endo, exo, param) -> sparse($I, $J, $V, $nendog, $ndynvars^2)
+    (StaticG1, staticg1ref,
+     StaticG2, staticg2ref,
+     DynamicG1, dynamicg1ref,
+     DynamicG2, dynamicg2ref)
 end
