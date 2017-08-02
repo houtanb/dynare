@@ -365,8 +365,7 @@ end
 
 function compose_derivatives(model)
     nendog = length(model["endogenous"])
-    ndynendogvars = length(model["dynamic_endog_xrefs"])
-    ndynvars = ndynendogvars + length(model["dynamic_exog_xrefs"])
+    ndynvars = length(model["dynamic_endog_xrefs"]) + length(model["dynamic_exog_xrefs"])
 
     endos, exos, params = Dict{String, Int}(), Dict{String, Int}(), Dict{String, Int}()
     create_var_map!(endos, model["endogenous"])
