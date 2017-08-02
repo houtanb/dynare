@@ -1,3 +1,6 @@
+include("test_symbolic_derivs.jl");
+include("test_preprocessor_derivs.jl");
+
 println("-------------------------")
 println("- Symbolic Derivs Below -")
 println("-------------------------")
