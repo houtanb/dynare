@@ -488,7 +488,7 @@ function compose_derivatives(model)
             if haskey(dynamicg1ref, (eq, dynvar_str))
                 deriv_syme = SymEngine.diff(dynamicg1ref[eq, dynvar_str], dynvar_syme)
                 if deriv_syme != 0
-                    col = (dynvar[2]-1) * ndynvars + dynvar[2]
+                    col = (dynvar[2] - 1) * ndynvars + dynvar[2]
                     dynamicg2ref[(eq, dynvar_str, dynvar_str)] = deriv_syme
                     I = [I; eq]
                     J = [J; col]
@@ -506,10 +506,8 @@ function compose_derivatives(model)
                     end
                     deriv_syme = SymEngine.diff(dynamicg1ref[eq, dynvar_str], dynvar_syme1)
                     if deriv_syme != 0
-                        id1 = dynvar[2]
-                        id2 = dynvar1[2]
-                        col = (id1-1) * ndynvars + id2
-                        col_sym = (id2-1) * ndynvars + id1
+                        col = (dynvar[2] - 1) * ndynvars + dynvar1[2]
+                        col_sym = (dynvar1[2] - 1) * ndynvars + dynvar[2]
                         dynamicg2ref[(eq, dynvar_str, dynvar_str1)] = deriv_syme
                         dynamicg2ref[(eq, dynvar_str1, dynvar_str)] = deriv_syme
                         deriv = string(replace_all_symengine_symbols(deriv_syme, endos, exos, params))
