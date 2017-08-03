@@ -67,14 +67,14 @@ function process(modfile::String)
     (StaticG1!, staticg1ref,
      StaticG2!, staticg2ref,
      DynamicG1!, dynamicg1ref,
-     DynamicG2, dynamicg2ref) = compose_derivatives(model)
+     DynamicG2!, dynamicg2ref) = compose_derivatives(model)
 
     # Return JSON and Julia representation of modfile
     (json, model,
      StaticG1!, staticg1ref,
      StaticG2!, staticg2ref,
      DynamicG1!, dynamicg1ref,
-     DynamicG2, dynamicg2ref)
+     DynamicG2!, dynamicg2ref)
 end
 
 function run_preprocessor(modfile::String)
@@ -480,7 +480,10 @@ function compose_derivatives(model)
 
     # Dynamic Hessian
     dynamicg2ref = Dict{Tuple{Int64, String, String}, SymEngine.Basic}()
-    I, J, V = Array{Int,1}(), Array{Int,1}(), String("[")
+    funcexpr = :(@assert size(g2) == ($nendog, $(ndynvars^2));)
+    append!(funcexpr.args, [:(@assert length(endo) == $ndynendog);
+                            :(@assert length(exo) == $ndynexog);
+                            :(@assert length(param) == $nparam)])
     visited = Dict{Tuple{String, Int64}, Int}()
     for dynvar in deriv_id_table
         visited[dynvar[1]] = dynvar[2]
@@ -499,9 +502,9 @@ function compose_derivatives(model)
                 if deriv_syme != 0
                     col = (dynvar[2] - 1) * ndynvars + dynvar[2]
                     dynamicg2ref[(eq, dynvar_str, dynvar_str)] = deriv_syme
-                    I = [I; eq]
-                    J = [J; col]
-                    V *= (V == "[" ? "" : ";") * string(replace_all_symengine_symbols(deriv_syme, endos, exos, params))
+                    append!(funcexpr.args,
+                            [:(@inbounds g2[$eq, $col] =
+                               $(replace_all_symengine_symbols(deriv_syme, endos, exos, params)))])
                 end
                 for dynvar1 in setdiff(deriv_id_table, visited)
                     eqs1 = Array{Int64,1}()
@@ -519,19 +522,19 @@ function compose_derivatives(model)
                         col_sym = (dynvar1[2] - 1) * ndynvars + dynvar[2]
                         dynamicg2ref[(eq, dynvar_str, dynvar_str1)] = deriv_syme
                         dynamicg2ref[(eq, dynvar_str1, dynvar_str)] = deriv_syme
-                        deriv = string(replace_all_symengine_symbols(deriv_syme, endos, exos, params))
-                        I = [I; eq; eq]
-                        J = [J; col; col_sym]
-                        V *= (V == "[" ? "" : ";") * deriv * ";" * deriv
+                        append!(funcexpr.args,
+                                [:(@inbounds g2[$eq, $col] =
+                                   $(replace_all_symengine_symbols(deriv_syme, endos, exos, params)));
+                                 :(@inbounds g2[$eq, $col_sym] =g2[$eq, $col])])
                     end
                 end
             end
         end
     end
-    V = parse(V * "]")
-    DynamicG2 = @eval (endo, exo, param) -> sparse($I, $J, $V, $nendog, $ndynvars^2)
+    DynamicG2! = @eval (endo, exo, param, g2) -> ($funcexpr)
+
     (StaticG1!, staticg1ref,
      StaticG2!, staticg2ref,
      DynamicG1!, dynamicg1ref,
-     DynamicG2, dynamicg2ref)
+     DynamicG2!, dynamicg2ref)
 end
