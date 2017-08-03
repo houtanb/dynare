@@ -64,14 +64,14 @@ function process(modfile::String)
            model["end_val"]) = parse_json(json)
 
     # Calculate derivatives
-    (StaticG1, staticg1ref,
+    (StaticG1!, staticg1ref,
      StaticG2, staticg2ref,
      DynamicG1, dynamicg1ref,
      DynamicG2, dynamicg2ref) = compose_derivatives(model)
 
     # Return JSON and Julia representation of modfile
     (json, model,
-     StaticG1, staticg1ref,
+     StaticG1!, staticg1ref,
      StaticG2, staticg2ref,
      DynamicG1, dynamicg1ref,
      DynamicG2, dynamicg2ref)
@@ -365,6 +365,8 @@ end
 
 function compose_derivatives(model)
     nendog = length(model["endogenous"])
+    nexog = length(model["exogenous"])
+    nparam = length(model["parameters"])
     ndynvars = length(model["dynamic_endog_xrefs"]) + length(model["dynamic_exog_xrefs"])
 
     endos, exos, params = Dict{String, Int}(), Dict{String, Int}(), Dict{String, Int}()
@@ -374,21 +376,22 @@ function compose_derivatives(model)
 
     # Static Jacobian
     staticg1ref = Dict{Tuple{Int64, String}, SymEngine.Basic}()
-    I, J, V = Array{Int,1}(), Array{Int,1}(), String("[")
+    funcexpr = :(@assert size(g1) == ($nendog, $nendog);)
+    append!(funcexpr.args, [:(@assert length(endo) == $nendog);
+                            :(@assert length(exo) == $nexog);
+                            :(@assert length(param) == $nparam)])
     for i = 1:nendog
         for eq in model["static_xrefs"][model["endogenous"][i].name]
             sederiv = SymEngine.diff(model["static"][eq],
                                    get_static_symbol(model["dynamic_endog_xrefs"], model["endogenous"][i].name))
             if sederiv != 0
                 staticg1ref[(eq, model["endogenous"][i].name)] = sederiv
-                I = [I; eq]
-                J = [J; i]
-                V *= (V == "[" ? "" : ";") * string(replace_all_symengine_symbols(sederiv, endos, exos, params))
+                append!(funcexpr.args,
+                        [:(@inbounds g1[$eq, $i] = $(replace_all_symengine_symbols(sederiv, endos, exos, params)))])
             end
         end
     end
-    V = parse(V * "]")
-    StaticG1 = @eval (endo, exo, param) -> sparse($I, $J, $V, $nendog, $nendog)
+    StaticG1! = @eval (endo, exo, param, g1) -> ($funcexpr)
 
     # Static Hessian
     staticg2ref = Dict{Tuple{Int64, String, String}, SymEngine.Basic}()
@@ -521,7 +524,7 @@ function compose_derivatives(model)
     end
     V = parse(V * "]")
     DynamicG2 = @eval (endo, exo, param) -> sparse($I, $J, $V, $nendog, $ndynvars^2)
-    (StaticG1, staticg1ref,
+    (StaticG1!, staticg1ref,
      StaticG2, staticg2ref,
      DynamicG1, dynamicg1ref,
      DynamicG2, dynamicg2ref)
