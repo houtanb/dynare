@@ -478,7 +478,8 @@ if pf && ~surprise
                 if (options_.bytecode)
                     [chck, zz, data1]= bytecode('dynamic','evaluate', z, zx, M_.params, oo_.steady_state, k, data1);
                 else
-                    [zz, g1b] = feval([M_.fname '_dynamic'], z', zx, M_.params, oo_.steady_state, k);
+                    [zz, g1b] = feval([M_.fname '_dynamic'], z', zx, M_.params, ...
+                                      oo_.steady_state, oo_.exo_steady_state, k);
                     data1.g1_x = g1b(:,end - M_.exo_nbr + 1:end);
                     data1.g1 = g1b(:,1 : end - M_.exo_nbr);
                     chck = 0;
@@ -750,7 +751,8 @@ else
                     if (options_.bytecode)
                         [chck, zz, data1]= bytecode('dynamic','evaluate', z, zx, M_.params, oo_.steady_state, k, data1);
                     else
-                        [zz, g1b] = feval([M_.fname '_dynamic'], z', zx, M_.params, oo_.steady_state, k);
+                        [zz, g1b] = feval([M_.fname '_dynamic'], z', zx, ...
+                                          M_.params, oo_.steady_state, oo_.exo_steady_state, k);
                         data1.g1_x = g1b(:,end - M_.exo_nbr + 1:end);
                         data1.g1 = g1b(:,1 : end - M_.exo_nbr);
                         chck = 0;

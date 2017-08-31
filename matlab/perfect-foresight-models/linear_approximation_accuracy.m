@@ -35,6 +35,7 @@ maximum_lag = M_.maximum_lag;
 
 periods = options_.periods;
 steady_state = oo_.steady_state;
+exo_steady_state = oo_.exo_steady_state;
 params = M_.params;
 endo_simul = oo_.endo_simul;
 exo_simul = oo_.exo_simul;
@@ -48,7 +49,7 @@ Y = endo_simul(:);
 i_cols = find(lead_lag_incidence')+(maximum_lag-1)*ny;
 
 for it = (maximum_lag+1):(maximum_lag+periods)
-    residuals(:,it-1) = model_dynamic(Y(i_cols), exo_simul, params, steady_state,it);
+    residuals(:,it-1) = model_dynamic(Y(i_cols), exo_simul, params, steady_state,exo_steady_state,it);
     i_cols = i_cols + ny;
 end
 

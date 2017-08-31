@@ -1,4 +1,5 @@
-function [endogenousvariables, info] = sim1_purely_backward(endogenousvariables, exogenousvariables, steadystate, M, options)
+function [endogenousvariables, info] = sim1_purely_backward(endogenousvariables, ...
+                                                  exogenousvariables, steadystate, M, options, oo)
 
 % Performs deterministic simulation of a purely backward model
 
@@ -44,7 +45,7 @@ for it = 2:options.periods+1
     [tmp, check] = solve1(dynamicmodel, [yb1; yb], 1:M.endo_nbr, nyb+1:nyb+M.endo_nbr, ...
                           1, options.gstep, options.solve_tolf, options.solve_tolx, ...
                           options.simul.maxit, options.debug, exogenousvariables, ...
-                          M.params, steadystate, it+M.maximum_lag-1);
+                          M.params, steadystate, oo.exo_steady_state, it+M.maximum_lag-1);
     if check
         info.status = 0;
     end

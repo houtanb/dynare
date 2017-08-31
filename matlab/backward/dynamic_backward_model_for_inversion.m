@@ -1,4 +1,6 @@
-function [r, J] = dynamic_backward_model_for_inversion(z, dynamicmodel, ylag, ycur, x, params, steady_state, it_, ModelInversion)
+function [r, J] = dynamic_backward_model_for_inversion(z, dynamicmodel, ylag, ...
+                                                  ycur, x, params, steady_state, ...
+                                                  exo_steady_state, it_, ModelInversion)
 
 % Copyright (C) 2017 Dynare Team
 %
@@ -30,9 +32,10 @@ end
 x(it_, ModelInversion.x_free_id) = transpose(z(ModelInversion.nyfree+(1:ModelInversion.nxfree)));
 
 if nargout>1
-    [r, Jacobian] = feval(dynamicmodel, y, x, params, steady_state, it_);
+    [r, Jacobian] = feval(dynamicmodel, y, x, params, steady_state, ...
+                          exo_steady_state, it_);
 else
-    r = feval(dynamicmodel, y, x, params, steady_state, it_);
+    r = feval(dynamicmodel, y, x, params, steady_state, exo_steady_state, it_);
     return
 end
 

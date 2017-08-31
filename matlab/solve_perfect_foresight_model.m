@@ -38,7 +38,7 @@ if pfm.use_bytecode
 end
 
 z = Y(find(pfm.lead_lag_incidence'));
-[d1,jacobian] = model_dynamic(z,exo_simul,pfm.params,pfm.steady_state,2);
+[d1,jacobian] = model_dynamic(z,exo_simul,pfm.params,pfm.steady_state,pfm.exo_steady_state,2);
 
 % Initialization of the jacobian of the stacked model.
 A = sparse([],[],[],pfm.periods*pfm.ny,pfm.periods*pfm.ny,pfm.periods*nnz(jacobian));
@@ -56,7 +56,7 @@ for iter = 1:pfm.maxit_
     i_cols_A = i_cols;
     % Fill the jacobian of the stacked model.
     for it = 2:(pfm.periods+1)
-        [d1,jacobian] = model_dynamic(Y(i_cols),exo_simul,pfm.params,pfm.steady_state,it);
+        [d1,jacobian] = model_dynamic(Y(i_cols),exo_simul,pfm.params,pfm.steady_state,pfm.exo_steady_state,it);
         if it == 2
             A(i_rows,pfm.i_cols_A1) = jacobian(:,pfm.i_cols_1);
         elseif it == pfm.periods+1

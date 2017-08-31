@@ -1,4 +1,5 @@
-function [endogenousvariables, info] = sim1(endogenousvariables, exogenousvariables, steadystate, M, options)
+function [endogenousvariables, info] = sim1(endogenousvariables, exogenousvariables, ...
+                                            steadystate, M, options, oo)
 
 % Performs deterministic simulations with lead or lag on one period. Uses sparse matrices.
 %
@@ -79,7 +80,8 @@ end
 model_dynamic = str2func([M.fname,'_dynamic']);
 z = Y(find(lead_lag_incidence'));
 
-[d1,jacobian] = model_dynamic(z, exogenousvariables, params, steadystate,maximum_lag+1);
+[d1,jacobian] = model_dynamic(z, exogenousvariables, params, steadystate, ...
+                              oo.exo_steady_state, maximum_lag+1);
 
 res = zeros(periods*ny,1);
 
@@ -100,7 +102,8 @@ for iter = 1:options.simul.maxit
     i_cols = i_cols_A+(maximum_lag-1)*ny;
     m = 0;
     for it = (maximum_lag+1):(maximum_lag+periods)
-        [d1,jacobian] = model_dynamic(Y(i_cols), exogenousvariables, params, steadystate,it);
+        [d1,jacobian] = model_dynamic(Y(i_cols), exogenousvariables, params, ...
+                                      steadystate, oo.exo_steady_state, it);
         if it == maximum_lag+periods && it == maximum_lag+1
             [r,c,v] = find(jacobian(:,i_cols_0));
             iA((1:length(v))+m,:) = [i_rows(r(:)),i_cols_A0(c(:)),v(:)];
@@ -174,7 +177,9 @@ for iter = 1:options.simul.maxit
 end
 
 if endogenous_terminal_period
-    err = evaluate_max_dynamic_residual(model_dynamic, Y, exogenousvariables, params, steadystate, o_periods, ny, max_lag, lead_lag_incidence);
+    err = evaluate_max_dynamic_residual(model_dynamic, Y, exogenousvariables, ...
+                                        params, steadystate, oo.exo_steady_state, ...
+                                        o_periods, ny, max_lag, lead_lag_incidence);
     periods = o_periods;
 end
 

@@ -51,6 +51,7 @@ pfm.isf1 = [pfm.nyp+pfm.ny+1:pfm.nyf+pfm.nyp+pfm.ny+1];
 pfm.iz = [1:pfm.ny+pfm.nyp+pfm.nyf];
 pfm.periods = DynareOptions.ep.periods;
 pfm.steady_state = DynareOutput.steady_state;
+pfm.exo_steady_state = DynareOutput.exo_steady_state;
 pfm.params = DynareModel.params;
 if DynareModel.maximum_endo_lead
     pfm.i_cols_1 = nonzeros(pfm.lead_lag_incidence(pfm.max_lag+(1:2),:)');

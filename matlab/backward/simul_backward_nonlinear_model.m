@@ -70,7 +70,9 @@ end
 for it = 1+(1:samplesize)
     ylag = Y(iy1,it-1);                   % Set lagged variables.
     y = Y(:,it-1);                        % A good guess for the initial conditions is the previous values for the endogenous variables.
-    Y(:,it) = dynare_solve(model_dynamic_s, y, DynareOptions, model_dynamic, ylag, DynareOutput.exo_simul, DynareModel.params, DynareOutput.steady_state, it);
+    Y(:,it) = dynare_solve(model_dynamic_s, y, DynareOptions, model_dynamic, ...
+                           ylag, DynareOutput.exo_simul, DynareModel.params, ...
+                           DynareOutput.steady_state, DynareOutput.exo_steady_state, it);
 end
 
 DynareOutput.endo_simul = Y;

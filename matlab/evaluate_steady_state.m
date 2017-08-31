@@ -312,12 +312,14 @@ if M.static_and_dynamic_models_differ
         [chck, r, junk]= bytecode('dynamic','evaluate', z, zx, M.params, ys, 1);
         mexErrCheck('bytecode', chck);
     elseif options.block
-        [r, oo.dr] = feval([M.fname '_dynamic'], z', zx, M.params, ys, M.maximum_lag+1, oo.dr);
+        [r, oo.dr] = feval([M.fname '_dynamic'], z', zx, M.params, ys, ...
+                           oo.exo_steady_state, M.maximum_lag+1, oo.dr);
     else
         iyv = M.lead_lag_incidence';
         iyr0 = find(iyv(:));
         xys = z(iyr0);
-        r = feval([M.fname '_dynamic'], z(iyr0), zx, M.params, ys, M.maximum_lag + 1);
+        r = feval([M.fname '_dynamic'], z(iyr0), zx, M.params, ys, ...
+                  oo.exo_steady_state, M.maximum_lag + 1);
     end
     % Fail if residual greater than tolerance
     if max(abs(r)) > options.solve_tolf

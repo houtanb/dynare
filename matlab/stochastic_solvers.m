@@ -119,7 +119,7 @@ if local_order == 1
         jacobia_ = [loc_dr.g1 loc_dr.g1_x loc_dr.g1_xd];
     else
         [junk,jacobia_] = feval([M_.fname '_dynamic'],z(iyr0),exo_simul, ...
-                                M_.params, dr.ys, it_);
+                                M_.params, dr.ys, oo_.exo_steady_state, it_);
     end
 elseif local_order == 2
     if (options_.bytecode)
@@ -129,7 +129,7 @@ elseif local_order == 2
     else
         [junk,jacobia_,hessian1] = feval([M_.fname '_dynamic'],z(iyr0),...
                                          exo_simul, ...
-                                         M_.params, dr.ys, it_);
+                                         M_.params, dr.ys, oo_.exo_steady_state, it_);
     end
     if options_.use_dll
         % In USE_DLL mode, the hessian is in the 3-column sparse representation

@@ -45,6 +45,6 @@ for i=1:length(nodes)
                            options, oo, []);
 
     z = [y0(i_pred); y1; y2(i_fwrd)];
-    res(:,i) = dynamic_model(z,x,M.params,oo.steady_state,2);
+    res(:,i) = dynamic_model(z,x,M.params,oo.steady_state,oo.exo_steady_state,2);
 end
 e = res*weights;

@@ -43,6 +43,7 @@ iz = [1:ny+nyp+nyf];
 
 periods = options.periods;
 steady_state = oo.steady_state;
+exo_steady_state = oo.exo_steady_state;
 params = M.params;
 endo_simul = oo.endo_simul;
 exo_simul = oo.exo_simul;
@@ -56,7 +57,8 @@ x = endo_simul(:);
 
 model_dynamic = str2func([M.fname,'_dynamic']);
 z = x(find(lead_lag_incidence'));
-[res,A] = model_dynamic(z, exo_simul, params, steady_state,2);
+[res,A] = model_dynamic(z, exo_simul, params, steady_state, exo_steady_state, ...
+                        2);
 nnzA = nnz(A);
 
 LB = repmat(lb,periods,1);
@@ -68,7 +70,7 @@ x = endo_simul(:,2:end-1);
 x = x(:);
 
 func_handle = @(x) dyn_lmmcp_func(x,model_dynamic, Y0, YT, exo_simul, ...
-                                  params, steady_state, periods, ny, ...
+                                  params, steady_state, exo_steady_state, periods, ny, ...
                                   lead_lag_incidence, i_cols_A1, i_cols_1, ...
                                   i_cols_T, i_cols_j,nnzA,eq_index);
 

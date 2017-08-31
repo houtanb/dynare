@@ -1,4 +1,4 @@
-function [r, J] = dynamic_backward_model_for_simulation(z, dynamicmodel, ylag, x, params, steady_state, it_)
+function [r, J] = dynamic_backward_model_for_simulation(z, dynamicmodel, ylag, x, params, steady_state, exo_steady_state, it_)
 
 % Copyright (C) 2017 Dynare Team
 %
@@ -28,10 +28,10 @@ y(idy) = z;
 
 if nargout>1
     % Compute residuals and jacobian of the full dynamic model.
-    [r, Jacobian] = feval(dynamicmodel, y, x, params, steady_state, it_);
+    [r, Jacobian] = feval(dynamicmodel, y, x, params, steady_state, exo_steady_state, it_);
 else
     % Compute residuals and return.
-    r = feval(dynamicmodel, y, x, params, steady_state, it_);
+    r = feval(dynamicmodel, y, x, params, steady_state, exo_steady_state, it_);
     return
 end
 

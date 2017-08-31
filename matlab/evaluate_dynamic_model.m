@@ -1,6 +1,9 @@
-function residuals = evaluate_dynamic_model(dynamicmodel, endogenousvariables, exogenousvariables, params, steadystate, leadlagincidence, samplesize)
+function residuals = evaluate_dynamic_model(dynamicmodel, endogenousvariables, ...
+                                            exogenousvariables, params, ...
+                                            steadystate, exosteadystate, ...
+                                            leadlagincidence, samplesize)
 
-% Copyright (C) 2016 Dynare Team
+% Copyright (C) 2016-2017 Dynare Team
 %
 % This file is part of Dynare.
 %
@@ -24,6 +27,7 @@ residuals = zeros(ny,samplesize);
 icols = find(leadlagincidence');
 
 for t = 2:samplesize+1
-    residuals(:,t-1) = dynamicmodel(endogenousvariables(icols), exogenousvariables, params, steadystate, t);
+    residuals(:,t-1) = dynamicmodel(endogenousvariables(icols), exogenousvariables, ...
+                                    params, steadystate, exosteadystate, t);
     icols = icols + ny;
 end

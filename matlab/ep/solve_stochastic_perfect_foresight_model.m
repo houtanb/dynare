@@ -23,6 +23,7 @@ stop = 0;
 
 params = pfm.params;
 steady_state = pfm.steady_state;
+exo_steady_state = pfm.exo_steady_state;
 ny = pfm.ny;
 periods = pfm.periods;
 dynamic_model = pfm.dynamic_model;
@@ -65,7 +66,7 @@ if verbose
 end
 
 z = endo_simul(find(lead_lag_incidence'));
-[d1,jacobian] = dynamic_model(z,exo_simul,params,steady_state,2);
+[d1,jacobian] = dynamic_model(z,exo_simul,params,steady_state,exo_steady_state,2);
 
 % Each column of Y represents a different world
 % The upper right cells are unused
@@ -131,7 +132,7 @@ for iter = 1:maxit
                     y = [Y(i_cols_p,i_w_p);
                          Y(i_cols_s,j);
                          Y(i_cols_f,(j-1)*nnodes+k)];
-                    [d1,jacobian] = dynamic_model(y,innovation,params,steady_state,i+1);
+                    [d1,jacobian] = dynamic_model(y,innovation,params,steady_state,exo_steady_state,i+1);
                     if i == 1
                         % in first period we don't keep track of
                         % predetermined variables
@@ -148,7 +149,7 @@ for iter = 1:maxit
                 y = [Y(i_cols_p,i_w_p);
                      Y(i_cols_s,j);
                      Y(i_cols_f,j)];
-                [d1,jacobian] = dynamic_model(y,innovation,params,steady_state,i+1);
+                [d1,jacobian] = dynamic_model(y,innovation,params,steady_state,exo_steady_state,i+1);
                 if i == 1
                     % in first period we don't keep track of
                     % predetermined variables
@@ -184,7 +185,7 @@ for iter = 1:maxit
         for i=order+2:periods
             [d1,jacobian] = dynamic_model(Y(i_rows_y,j), ...
                                           exo_simul,params, ...
-                                          steady_state,i+1);
+                                          steady_state,exo_steady_state,i+1);
             if i == periods
                 [ir,ic,v] = find(jacobian(:,i_cols_T));
             else
