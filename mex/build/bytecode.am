@@ -1,18 +1,19 @@
 mex_PROGRAMS = bytecode
 
-bytecode_CPPFLAGS =  -Wno-maybe-uninitialized $(AM_CPPFLAGS) -I$(top_srcdir)/../../sources -I$(top_srcdir)/../../sources/bytecode -I$(top_srcdir)/../../../preprocessor
-
-TOPDIR = $(top_srcdir)/../../sources/bytecode
+bytecode_CPPFLAGS = -Wno-maybe-uninitialized $(AM_CPPFLAGS) -I../../../sources/bytecode -I../../../../preprocessor
 
 nodist_bytecode_SOURCES = \
-	$(TOPDIR)/bytecode.cc \
-	$(TOPDIR)/Interpreter.cc \
-	$(TOPDIR)/Mem_Mngr.cc \
-	$(TOPDIR)/SparseMatrix.cc \
-	$(TOPDIR)/Evaluate.cc \
-	$(TOPDIR)/Interpreter.hh \
-	$(TOPDIR)/Mem_Mngr.hh \
-	$(TOPDIR)/SparseMatrix.hh \
-	$(TOPDIR)/Evaluate.hh \
-	$(TOPDIR)/ErrorHandling.hh
+	bytecode.cc \
+	Interpreter.cc \
+	Mem_Mngr.cc \
+	SparseMatrix.cc \
+	Evaluate.cc
 
+FILES_TO_LINK = \
+	$(addprefix ../../../sources/bytecode/,$(nodist_bytecode_SOURCES))
+
+include ../../linkmexfiles.am
+
+distclean-local:
+	rm -f $(nodist_bytecode_SOURCES)
+	rm -f .mexfileslinked

@@ -1,5 +1,15 @@
-vpath %.cc $(top_srcdir)/../../sources/sobol
-
 mex_PROGRAMS = qmc_sequence
 
-nodist_qmc_sequence_SOURCES = qmc_sequence.cc
+qmc_sequence_CPPFLAGS = $(AM_CPPFLAGS) -I../../../sources/sobol
+
+nodist_qmc_sequence_SOURCES = \
+	qmc_sequence.cc
+
+FILES_TO_LINK = \
+	$(addprefix ../../../sources/sobol/,$(nodist_qmc_sequence_SOURCES))
+
+include ../../linkmexfiles.am
+
+distclean-local:
+	rm -f $(nodist_qmc_sequence_SOURCES)
+	rm -f .mexfileslinked

@@ -15,6 +15,7 @@ TAGS
 *.xlsx
 
 # Build system rules
+.mexfileslinked
 .deps
 Makefile
 Makefile.in

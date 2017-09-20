@@ -1,6 +1,6 @@
 mex_PROGRAMS = k_order_perturbation
 
-k_order_perturbation_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../../../dynare++/src -I$(top_srcdir)/../../../dynare++/kord -I$(top_srcdir)/../../../dynare++/tl/cc -I$(top_srcdir)/../../../dynare++/utils/cc -I$(top_srcdir)/../../../dynare++/sylv/cc -I$(top_srcdir)/../../../dynare++/integ/cc -I$(top_srcdir)/../../sources $(CPPFLAGS_MATIO)
+k_order_perturbation_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../../sources/k_order_perturbation -I$(top_srcdir)/../../../dynare++/src -I$(top_srcdir)/../../../dynare++/kord -I$(top_srcdir)/../../../dynare++/tl/cc -I$(top_srcdir)/../../../dynare++/utils/cc -I$(top_srcdir)/../../../dynare++/sylv/cc -I$(top_srcdir)/../../../dynare++/integ/cc -I$(top_srcdir)/../../sources $(CPPFLAGS_MATIO)
 
 k_order_perturbation_CXXFLAGS = $(AM_CXXFLAGS) $(PTHREAD_CFLAGS)
 
@@ -8,15 +8,18 @@ k_order_perturbation_CXXFLAGS = $(AM_CXXFLAGS) $(PTHREAD_CFLAGS)
 k_order_perturbation_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS_MATIO)
 k_order_perturbation_LDADD = ../libdynare++/libdynare++.a $(PTHREAD_LIBS) $(LIBADD_DLOPEN) $(LIBADD_MATIO)
 
-TOPDIR = $(top_srcdir)/../../sources/k_order_perturbation
-
 nodist_k_order_perturbation_SOURCES = \
-	$(TOPDIR)/k_order_perturbation.cc \
-	$(TOPDIR)/k_ord_dynare.cc \
-	$(TOPDIR)/k_ord_dynare.hh \
-	$(TOPDIR)/dynamic_dll.cc \
-	$(TOPDIR)/dynamic_dll.hh \
-	$(TOPDIR)/dynamic_abstract_class.cc \
-	$(TOPDIR)/dynamic_abstract_class.hh \
-	$(TOPDIR)/dynamic_m.cc \
-	$(TOPDIR)/dynamic_m.hh
+	k_order_perturbation.cc \
+	k_ord_dynare.cc \
+	dynamic_dll.cc \
+	dynamic_abstract_class.cc \
+	dynamic_m.cc
+
+FILES_TO_LINK = \
+	$(addprefix ../../../sources/k_order_perturbation/,$(nodist_k_order_perturbation_SOURCES))
+
+include ../../linkmexfiles.am
+
+distclean-local:
+	rm -f $(nodist_k_order_perturbation_SOURCES)
+	rm -f .mexfileslinked

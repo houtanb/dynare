@@ -20,7 +20,7 @@ dnl along with Dynare.  If not, see <http://www.gnu.org/licenses/>.
 AC_PREREQ([2.62])
 AC_INIT([dynare], [4.6-unstable])
 AC_CONFIG_SRCDIR([configure.ac])
-AM_INIT_AUTOMAKE([-Wall -Wno-portability foreign])
+AM_INIT_AUTOMAKE([-Wall -Wno-portability foreign subdir-objects])
 
 AC_CHECK_PROG([MKOCTFILE], [mkoctfile], [mkoctfile])
 
@@ -155,8 +155,8 @@ AC_CONFIG_FILES([Makefile
                  kalman_steady_state/Makefile
                  ms_sbvar/Makefile
                  block_kalman_filter/Makefile
-		 sobol/Makefile
-		 local_state_space_iterations/Makefile
+                 sobol/Makefile
+                 local_state_space_iterations/Makefile
                  linsolve/Makefile])
 
 AC_OUTPUT

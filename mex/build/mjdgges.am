@@ -1,3 +1,15 @@
+export
+
 mex_PROGRAMS = mjdgges
 
-nodist_mjdgges_SOURCES = $(top_srcdir)/../../sources/mjdgges/mjdgges.c
+nodist_mjdgges_SOURCES = \
+	mjdgges.c
+
+FILES_TO_LINK = \
+	$(addprefix ../../../sources/mjdgges/,$(nodist_mjdgges_SOURCES))
+
+include ../../linkmexfiles.am
+
+distclean-local:
+	rm -f $(nodist_mjdgges_SOURCES)
+	rm -f .mexfileslinked

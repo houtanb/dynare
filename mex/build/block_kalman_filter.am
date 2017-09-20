@@ -1,3 +1,15 @@
 mex_PROGRAMS = block_kalman_filter
 
-nodist_block_kalman_filter_SOURCES = $(top_srcdir)/../../sources/block_kalman_filter/block_kalman_filter.cc
+block_kalman_filter_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/../../sources/block_kalman_filter
+
+nodist_block_kalman_filter_SOURCES = \
+	block_kalman_filter.cc
+
+FILES_TO_LINK = \
+	$(addprefix ../../../sources/block_kalman_filter/,$(nodist_block_kalman_filter_SOURCES))
+
+include ../../linkmexfiles.am
+
+distclean-local:
+	rm -f $(nodist_block_kalman_filter_SOURCES)
+	rm -f .mexfileslinked

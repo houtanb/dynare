@@ -1,0 +1,10 @@
+BUILT_SOURCES = .mexfileslinked
+
+$(subst PROG,$(mex_PROGRAMS),nodist_PROG_SOURCES): .mexfileslinked
+
+.mexfileslinked:
+	for f in $(FILES_TO_LINK); do \
+		$(LN_S) $$f $${f##*/}; \
+	done
+	touch $@
+
