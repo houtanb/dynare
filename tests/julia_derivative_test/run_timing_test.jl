@@ -1,3 +1,4 @@
+N=1
 
 println("......ignore this......")
 include("test_symbolic_derivs.jl");
@@ -12,9 +13,14 @@ println("- Symbolic Derivs Below -")
 println("-------------------------")
 @time include("test_symbolic_derivs.jl")
 
-println("-------------------------")
-println("Preprocessor Derivs Below")
-println("-------------------------")
+println("--------------------------------------------")
+println("- Preprocessor Computing Pass Output Below -")
+println("--------------------------------------------")
+@time include("test_preprocessor_computing_pass_derivs.jl")
+
+println("-----------------------------------")
+println("- Preprocessor Write Output Below -")
+println("-----------------------------------")
 @time include("test_preprocessor_derivs.jl")
 
 

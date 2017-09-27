@@ -9,7 +9,7 @@ sg1 = spzeros(6, 6)
 sg2 = spzeros(6, 36)
 dg1 = spzeros(6, 14)
 dg2 = spzeros(6, 196)
-N = 10000
+
 for i = 1:N
     StaticG1!(endogss, exogs, params, sg1)
     StaticG2!(endogss, exogs, params, sg2)

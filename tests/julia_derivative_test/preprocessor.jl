@@ -21,26 +21,6 @@ function process(modfile::String)
 
     # Parse JSON output into Julia representation
     model = Dict{String, Any}()
-#    (model["parameters"],
-#     model["endogenous"],
-#     model["exogenous"],
-#     model["exogenous_deterministic"],
-#     model["equations_dynamic"],
-#     model["equations_static"],
-#     model["dynamic"],
-#     model["static"],
-#     model["dynamic_endog_xrefs"],
-#     model["dynamic_exog_xrefs"],
-#     model["static_xrefs"],
-#     model["dynamic_endog_reverse_lookup"],
-#     model["dynamic_exog_reverse_lookup"],
-#     model["lead_lag_incidence"],
-#     model["lead_lag_incidence_ref"],
-#     model["lead_lag_incidence_exo"],
-#     model["lead_lag_incidence_exo_ref"],
-#     model["param_init"],
-#     model["init_val"],
-#     model["end_val"]) = parse_json(json)
 
     (model["parameters"],
      model["endogenous"],

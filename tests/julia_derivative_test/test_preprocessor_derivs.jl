@@ -20,7 +20,6 @@ exogsd = Matrix{Float64}(1,2)
 exogsd[1] = 1
 exogsd[2] = 2
 
-N = 10000
 for i = 1:N
     example1Static.static!(endogss, exogss, params, sresidual, sg1, sg2)
     example1Dynamic.dynamic!(endogsd, exogsd, params, params, 1, dresidual, dg1, dg2)
